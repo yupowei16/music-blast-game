@@ -1,1 +1,474 @@
 
+:root {
+  --bg-1: #13152e;
+  --bg-2: #28285c;
+  --panel: rgba(27, 30, 64, 0.92);
+  --text: #ffffff;
+  --subtext: #cdd2ff;
+  --pink: #ff77b7;
+  --purple: #9f77ff;
+  --blue: #67ddff;
+  --mint: #65f2cd;
+  --ice: #90eaff;
+  --poison: #69f6bd;
+  --danger: #ff5d75;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text);
+  font-family: "Microsoft JhengHei", "PingFang TC", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 119, 183, 0.22), transparent 30%),
+    radial-gradient(circle at 78% 72%, rgba(103, 221, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, var(--bg-1), var(--bg-2));
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.app-shell {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 42px;
+}
+
+.game-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.game-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 18px rgba(155, 118, 255, 0.8);
+}
+
+.game-header p {
+  color: var(--subtext);
+  margin: 10px 0 0;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.home-card,
+.panel {
+  width: min(1020px, 100%);
+  margin: 0 auto;
+  padding: clamp(26px, 5vw, 52px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.home-card {
+  min-height: 400px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.home-card h2,
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+}
+
+.home-card p,
+.panel-description {
+  max-width: 680px;
+  margin: 0 auto 28px;
+  color: var(--subtext);
+  line-height: 1.8;
+}
+
+.primary-button,
+.secondary-button {
+  min-width: 170px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  color: white;
+  font-weight: 700;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  box-shadow: 0 8px 22px rgba(159, 119, 255, 0.35);
+}
+
+.secondary-button {
+  margin-top: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #eef0ff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.level-card {
+  min-height: 210px;
+  padding: 24px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  color: white;
+  text-align: left;
+  background:
+    linear-gradient(145deg, rgba(115, 107, 255, 0.42), rgba(255, 119, 183, 0.2));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.level-card.boss-level {
+  background:
+    linear-gradient(145deg, rgba(255, 86, 130, 0.55), rgba(255, 155, 107, 0.27));
+}
+
+.level-number {
+  display: block;
+  margin-bottom: 16px;
+  color: #e7dcff;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.level-name {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.level-desc {
+  display: block;
+  margin-top: 10px;
+  color: #e5e7ff;
+  font-size: 0.94rem;
+}
+
+.character-panel {
+  text-align: center;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.character-card {
+  display: flex;
+  min-height: 560px;
+  flex-direction: column;
+  align-items: center;
+  padding: 26px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ice-card {
+  box-shadow: inset 0 0 30px rgba(122, 234, 255, 0.12);
+}
+
+.poison-card {
+  box-shadow: inset 0 0 30px rgba(105, 246, 189, 0.1);
+}
+
+.character-image-wrap {
+  display: grid;
+  width: 100%;
+  height: 260px;
+  place-items: center;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.23), transparent 58%),
+    rgba(8, 10, 30, 0.38);
+}
+
+.character-select-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.character-card h3 {
+  margin: 8px 0 12px;
+  font-size: 1.7rem;
+}
+
+.attribute {
+  margin: 0 0 12px;
+  font-weight: 800;
+}
+
+.attribute.ice {
+  color: var(--ice);
+}
+
+.attribute.poison {
+  color: var(--poison);
+}
+
+.ability {
+  max-width: 360px;
+  min-height: 56px;
+  margin: 0;
+  color: #e7e8ff;
+  line-height: 1.75;
+}
+
+.character-button {
+  margin-top: auto;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+
+.poison-button {
+  background: linear-gradient(135deg, #43d9ba, #517cf5);
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.game-info {
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  background: rgba(23, 25, 57, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.game-info h2 {
+  margin: 0 0 18px;
+  font-size: 1.45rem;
+}
+
+.selected-character {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 18px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+}
+
+.selected-character img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.selected-character p {
+  margin: 3px 0;
+}
+
+#selectedCharacterName {
+  font-weight: 800;
+}
+
+#selectedCharacterAttribute {
+  color: var(--subtext);
+  font-size: 0.9rem;
+}
+
+.stat-box {
+  margin: 15px 0;
+}
+
+.stat-box span {
+  display: block;
+  color: var(--subtext);
+  font-size: 0.88rem;
+}
+
+.stat-box strong {
+  display: block;
+  margin: 5px 0;
+  font-size: 1.08rem;
+}
+
+.bar {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bar-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.hp-fill {
+  background: linear-gradient(90deg, #4de89d, #bbff78);
+}
+
+.control-note {
+  margin-top: 22px;
+  padding: 13px;
+  border-radius: 14px;
+  color: #e3e7ff;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.control-note p {
+  margin: 6px 0;
+}
+
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  background: #11152f;
+  box-shadow: var(--shadow);
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(111, 184, 255, 0.18), transparent 30%),
+    linear-gradient(145deg, #101832, #2a1f50);
+}
+
+.game-message {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(8, 8, 24, 0.7);
+}
+
+.game-message.hidden {
+  display: none;
+}
+
+.message-card {
+  width: min(430px, 100%);
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  text-align: center;
+  background: #242654;
+  box-shadow: var(--shadow);
+}
+
+.message-card h2 {
+  margin: 0 0 12px;
+}
+
+.message-card p {
+  margin: 0 0 18px;
+  color: var(--subtext);
+  line-height: 1.65;
+}
+
+.message-card .secondary-button {
+  margin-left: 8px;
+}
+
+@media (max-width: 900px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+  }
+
+  .game-info h2,
+  .selected-character,
+  .control-note,
+  #leaveGameButton {
+    grid-column: 1 / -1;
+  }
+
+  .stat-box {
+    margin: 0;
+  }
+
+  .secondary-button {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    width: min(100% - 20px, 1200px);
+    padding-top: 16px;
+  }
+
+  .level-grid,
+  .character-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .character-card {
+    min-height: auto;
+  }
+
+  .character-image-wrap {
+    height: 230px;
+  }
+
+  .game-info {
+    grid-template-columns: 1fr;
+  }
+
+  .message-card .secondary-button {
+    margin-left: 0;
+  }
+}
