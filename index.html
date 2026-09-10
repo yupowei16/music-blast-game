@@ -1,1 +1,164 @@
 
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>音符爆裂戰記</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <main class="app-shell">
+    <header class="game-header">
+      <h1>音符爆裂戰記</h1>
+      <p>選擇角色、進入關卡，使用爆裂彈擊敗敵人吧！</p>
+    </header>
+
+    <!-- 首頁 -->
+    <section id="homeScreen" class="screen active">
+      <div class="home-card">
+        <h2>準備開始冒險</h2>
+        <p>每個角色都擁有獨特屬性與特殊爆裂彈效果。</p>
+        <button id="startButton" class="primary-button">開始遊戲</button>
+      </div>
+    </section>
+
+    <!-- 關卡選擇 -->
+    <section id="levelScreen" class="screen">
+      <div class="panel">
+        <h2>選擇關卡</h2>
+        <p class="panel-description">先選擇你想挑戰的關卡。</p>
+
+        <div class="level-grid">
+          <button class="level-card unlocked" data-level="1">
+            <span class="level-number">1</span>
+            <span class="level-name">音符森林</span>
+            <span class="level-desc">適合熟悉操作</span>
+          </button>
+
+          <button class="level-card unlocked" data-level="2">
+            <span class="level-number">2</span>
+            <span class="level-name">節奏洞窟</span>
+            <span class="level-desc">敵人速度提升</span>
+          </button>
+
+          <button class="level-card unlocked boss-level" data-level="3">
+            <span class="level-number">3</span>
+            <span class="level-name">憤怒的卡比</span>
+            <span class="level-desc">Boss 關卡</span>
+          </button>
+        </div>
+
+        <button class="secondary-button back-home">返回首頁</button>
+      </div>
+    </section>
+
+    <!-- 角色選擇 -->
+    <section id="characterScreen" class="screen">
+      <div class="panel character-panel">
+        <h2>選擇角色</h2>
+        <p class="panel-description">選定角色後，將使用對應屬性的爆裂彈進入關卡。</p>
+
+        <div class="character-grid">
+          <article class="character-card ice-card">
+            <div class="character-image-wrap">
+              <img
+                src="images/3654-removebg-preview.jpg"
+                alt="初音未來"
+                class="character-select-image"
+              />
+            </div>
+
+            <h3>初音未來</h3>
+            <p class="attribute ice">屬性：冰</p>
+            <p class="ability">能力：爆裂彈造成冰凍，使敵人移動速度減慢。</p>
+
+            <button class="primary-button character-button" data-character="miku">
+              選擇初音未來
+            </button>
+          </article>
+
+          <article class="character-card poison-card">
+            <div class="character-image-wrap">
+              <img
+                src="images/3655-removebg-preview.jpg"
+                alt="宵崎奏"
+                class="character-select-image"
+              />
+            </div>
+
+            <h3>宵崎奏</h3>
+            <p class="attribute poison">屬性：毒</p>
+            <p class="ability">能力：爆裂彈造成中毒，每秒造成 3 點傷害。</p>
+
+            <button class="primary-button character-button poison-button" data-character="kanade">
+              選擇宵崎奏
+            </button>
+          </article>
+        </div>
+
+        <button id="backToLevelsButton" class="secondary-button">返回關卡選擇</button>
+      </div>
+    </section>
+
+    <!-- 遊戲畫面 -->
+    <section id="gameScreen" class="screen">
+      <div class="game-layout">
+        <aside class="game-info">
+          <h2 id="levelTitle">關卡</h2>
+
+          <div class="selected-character">
+            <img id="selectedCharacterPortrait" src="" alt="目前角色" />
+            <div>
+              <p id="selectedCharacterName">角色名稱</p>
+              <p id="selectedCharacterAttribute">屬性</p>
+            </div>
+          </div>
+
+          <div class="stat-box">
+            <span>生命值</span>
+            <strong id="playerHpText">100 / 100</strong>
+            <div class="bar">
+              <div id="playerHpBar" class="bar-fill hp-fill"></div>
+            </div>
+          </div>
+
+          <div class="stat-box">
+            <span>分數</span>
+            <strong id="scoreText">0</strong>
+          </div>
+
+          <div class="stat-box">
+            <span>敵人剩餘</span>
+            <strong id="enemyCountText">0</strong>
+          </div>
+
+          <div class="control-note">
+            <p>移動：WASD 或方向鍵</p>
+            <p>攻擊：滑鼠點擊或空白鍵</p>
+            <p>爆裂彈：E 鍵</p>
+          </div>
+
+          <button id="leaveGameButton" class="secondary-button">離開關卡</button>
+        </aside>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="960" height="600"></canvas>
+
+          <div id="gameMessage" class="game-message hidden">
+            <div class="message-card">
+              <h2 id="messageTitle">關卡完成！</h2>
+              <p id="messageText"></p>
+              <button id="restartButton" class="primary-button">再玩一次</button>
+              <button id="messageBackButton" class="secondary-button">回到關卡選擇</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
