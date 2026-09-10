@@ -1,791 +1,751 @@
-
-const homeScreen = document.getElementById("homeScreen");
-const levelScreen = document.getElementById("levelScreen");
-const characterScreen = document.getElementById("characterScreen");
-const gameScreen = document.getElementById("gameScreen");
-
-const startButton = document.getElementById("startButton");
-const backToLevelsButton = document.getElementById("backToLevelsButton");
-const leaveGameButton = document.getElementById("leaveGameButton");
-const restartButton = document.getElementById("restartButton");
-const messageBackButton = document.getElementById("messageBackButton");
-
-const levelTitle = document.getElementById("levelTitle");
-const selectedCharacterPortrait = document.getElementById("selectedCharacterPortrait");
-const selectedCharacterName = document.getElementById("selectedCharacterName");
-const selectedCharacterAttribute = document.getElementById("selectedCharacterAttribute");
-const playerHpText = document.getElementById("playerHpText");
-const playerHpBar = document.getElementById("playerHpBar");
-const scoreText = document.getElementById("scoreText");
-const enemyCountText = document.getElementById("enemyCountText");
-
-const gameMessage = document.getElementById("gameMessage");
-const messageTitle = document.getElementById("messageTitle");
-const messageText = document.getElementById("messageText");
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const W = canvas.width;
-const H = canvas.height;
+const statusText = document.getElementById("status");
+const xpBar = document.getElementById("xp-bar");
+const ultBar = document.getElementById("ult-bar");
+const ultText = document.getElementById("ult-text");
+const dashBar = document.getElementById("dash-bar");
+const dashText = document.getElementById("dash-text");
 
-const images = {
-  mikuSelect: new Image(),
-  kanadeSelect: new Image(),
-  angryKirby: new Image(),
-  mikuGame: new Image(),
-  kanadeGame: new Image()
+const bossHpContainer = document.getElementById("boss-hp-container");
+const bossHpBar = document.getElementById("boss-hp-bar");
+const bossHpText = document.getElementById("boss-hp-text");
+
+const stageNumberText = document.getElementById("stage-number");
+const stageGoalText = document.getElementById("stage-goal");
+const weaponNameText = document.getElementById("weapon-name");
+const weaponDetailText = document.getElementById("weapon-detail");
+const explosiveCooldown = document.getElementById("explosive-cooldown");
+const explosiveCooldownText = document.getElementById("explosive-cooldown-text");
+const explosiveCooldownBar = document.getElementById("explosive-cooldown-bar");
+
+const modals = {
+    main: document.getElementById("main-menu"),
+    character: document.getElementById("character-select-modal"),
+    level: document.getElementById("level-up-modal"),
+    reward: document.getElementById("stage-reward-modal"),
+    achievement: document.getElementById("achievement-modal"),
+    pause: document.getElementById("pause-modal"),
+    end: document.getElementById("end-modal")
 };
 
-images.mikuSelect.src = "images/3654-removebg-preview.jpg";
-images.kanadeSelect.src = "images/3655-removebg-preview.jpg";
-images.angryKirby.src = "images/3668-removebg-preview.jpg";
-images.mikuGame.src = "images/3669-removebg-preview.jpg";
-images.kanadeGame.src = "images/3670-removebg-preview.jpg";
+const stageRewardTitle = document.getElementById("stage-reward-title");
+const stageRewardText = document.getElementById("stage-reward-text");
+const achievementList = document.getElementById("achievement-list");
+const skillChoicesDiv = document.getElementById("skill-choices");
+const pauseInfo = document.getElementById("pause-info");
+const endTitle = document.getElementById("end-title");
+const endStats = document.getElementById("end-stats");
 
-const characterData = {
-  miku: {
-    name: "初音未來",
-    attribute: "屬性：冰",
-    color: "#9deeff",
-    bulletColor: "#9b66ff",
-    portrait: "images/3669-removebg-preview.jpg",
-    image: "mikuGame"
-  },
-  kanade: {
-    name: "宵崎奏",
-    attribute: "屬性：毒",
-    color: "#75f0c6",
-    bulletColor: "#40e6cb",
-    portrait: "images/3670-removebg-preview.jpg",
-    image: "kanadeGame"
-  }
+const GAME_IMAGES = {
+    selectMiku: "images/3654-removebg-preview.jpg",
+    selectKanade: "images/3655-removebg-preview.jpg",
+    playerMiku: "images/3668-removebg-preview.jpg",
+    playerKanade: "images/3670-removebg-preview.jpg",
+    normalEnemy: "images/3657-removebg-preview.jpg",
+    eliteEnemy: "images/3663-removebg-preview.jpg",
+    angryKirbyBoss: "images/3669-removebg-preview.jpg"
 };
 
-const levels = {
-  1: {
-    name: "音符森林",
-    enemies: 8,
-    speed: 1.1,
-    hp: 22,
-    boss: false
-  },
-  2: {
-    name: "節奏洞窟",
-    enemies: 13,
-    speed: 1.55,
-    hp: 30,
-    boss: false
-  },
-  3: {
-    name: "憤怒的卡比",
-    enemies: 1,
-    speed: 1.25,
-    hp: 260,
-    boss: true
-  }
+const images = {};
+
+function loadImages() {
+    Object.entries(GAME_IMAGES).forEach(([key, source]) => {
+        const image = new Image();
+        image.src = source;
+        images[key] = image;
+    });
+}
+
+loadImages();
+
+function updateDeviceMode() {
+    const hasTouch =
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia("(pointer: coarse)").matches;
+
+    const mobileMode = hasTouch && window.innerWidth <= 900;
+
+    document.body.classList.toggle("mobile-mode", mobileMode);
+    document.body.classList.toggle("desktop-mode", !mobileMode);
+
+    return mobileMode;
+}
+
+let isMobileMode = updateDeviceMode();
+
+window.addEventListener("resize", () => {
+    isMobileMode = updateDeviceMode();
+});
+
+const MAX_STAGES = 50;
+const KILLS_PER_STAGE = 8;
+const BOSS_STAGE_INTERVAL = 5;
+
+const keys = {
+    up: false,
+    down: false,
+    left: false,
+    right: false
 };
 
-let selectedLevel = 1;
-let selectedCharacter = "miku";
-let running = false;
-let animationId = null;
 let lastTime = 0;
-let mouse = { x: W / 2, y: H / 2 };
+let selectedCharacter = null;
+let game = null;
 
-let keys = {};
-let player;
-let bullets = [];
-let enemies = [];
-let particles = [];
-let score = 0;
-let elapsed = 0;
-let lastShot = 0;
-let lastBurst = 0;
-let bossSpawnTimer = 0;
-
-function showScreen(screen) {
-  [homeScreen, levelScreen, characterScreen, gameScreen].forEach((item) => {
-    item.classList.remove("active");
-  });
-
-  screen.classList.add("active");
+function createGameState() {
+    return {
+        running: false,
+        paused: false,
+        stage: 1,
+        kills: 0,
+        stageKills: 0,
+        bossSpawned: false,
+        bossDefeated: false,
+        stageRewardReady: false,
+        gold: 0,
+        elapsedMs: 0,
+        enemies: [],
+        bullets: [],
+        particles: [],
+        floatingTexts: [],
+        spawnTimer: 0,
+        levelUpPending: false,
+        unlockedAchievements: new Set(),
+        player: {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 24,
+            speed: 225,
+            health: 100,
+            maxHealth: 100,
+            baseDamage: 18,
+            level: 1,
+            xp: 0,
+            xpToNext: 60,
+            attackIntervalMs: 360,
+            lastAttackAt: -9999,
+            facingX: 1,
+            facingY: 0,
+            dashCooldownMs: 1800,
+            lastDashAt: -9999,
+            dashUntil: 0,
+            invulnerableUntil: 0,
+            ultimateCharge: 0,
+            weaponLevel: 1,
+            weaponType: "pistol",
+            lastExplosiveShotAt: -9999,
+            explosiveShotCooldownMs: 1500,
+            skillLevels: {
+                fireRate: 0,
+                speed: 0,
+                damage: 0,
+                health: 0,
+                magnet: 0
+            }
+        }
+    };
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+function showModal(name) {
+    modals[name].classList.add("visible");
 }
 
-function distance(ax, ay, bx, by) {
-  return Math.hypot(ax - bx, ay - by);
+function hideModal(name) {
+    modals[name].classList.remove("visible");
 }
 
-function randomBetween(min, max) {
-  return Math.random() * (max - min) + min;
+function hideAllGameplayModals() {
+    hideModal("level");
+    hideModal("reward");
+    hideModal("pause");
+    hideModal("end");
 }
 
-function formatAttribute(character) {
-  return character === "miku" ? "屬性：冰" : "屬性：毒";
+function startButtonFlow() {
+    hideModal("main");
+    showModal("character");
 }
 
-function startGame(level, character) {
-  selectedLevel = Number(level);
-  selectedCharacter = character;
+function chooseCharacter(characterId) {
+    selectedCharacter = characterId;
+    hideModal("character");
+    startNewGame();
+}
 
-  const levelData = levels[selectedLevel];
-  const characterInfo = characterData[selectedCharacter];
+function startNewGame() {
+    game = createGameState();
 
-  levelTitle.textContent = `第 ${selectedLevel} 關：${levelData.name}`;
-  selectedCharacterPortrait.src = characterInfo.portrait;
-  selectedCharacterName.textContent = characterInfo.name;
-  selectedCharacterAttribute.textContent = characterInfo.attribute;
+    game.player.image =
+        selectedCharacter === "miku"
+            ? images.playerMiku
+            : images.playerKanade;
 
-  player = {
-    x: W / 2,
-    y: H / 2,
-    radius: 30,
-    hp: 100,
-    maxHp: 100,
-    speed: 4.6,
-    invincible: 0
-  };
+    game.running = true;
+    game.paused = false;
 
-  bullets = [];
-  enemies = [];
-  particles = [];
-  score = 0;
-  elapsed = 0;
-  lastShot = 0;
-  lastBurst = 0;
-  bossSpawnTimer = 0;
-  running = true;
-  lastTime = performance.now();
+    hideAllGameplayModals();
+    startStage(1);
+    updateUI();
+}
 
-  if (levelData.boss) {
-    enemies.push(createBoss());
-  } else {
-    for (let i = 0; i < levelData.enemies; i++) {
-      enemies.push(createEnemy(levelData));
+function restartGame() {
+    selectedCharacter = selectedCharacter || "miku";
+    hideModal("end");
+    hideModal("pause");
+    startNewGame();
+}
+
+function startStage(stage) {
+    game.stage = stage;
+    game.stageKills = 0;
+    game.bossSpawned = false;
+    game.bossDefeated = false;
+    game.stageRewardReady = false;
+    game.enemies = [];
+    game.bullets = [];
+    game.particles = [];
+    game.floatingTexts = [];
+    game.spawnTimer = 0;
+
+    game.player.x = canvas.width / 2;
+    game.player.y = canvas.height / 2;
+    game.player.health = Math.min(
+        game.player.maxHealth,
+        game.player.health + Math.round(game.player.maxHealth * 0.2)
+    );
+
+    updateUI();
+}
+
+function getDifficulty(stage) {
+    return {
+        enemyHp: 1 + (stage - 1) * 0.07,
+        enemyDamage: 1 + (stage - 1) * 0.025,
+        enemySpeed: 1 + (stage - 1) * 0.007,
+        spawnInterval: Math.max(450, 1150 - (stage - 1) * 11),
+        eliteHp: 1.8 + Math.min(stage * 0.01, 0.5),
+        bossHp: 4.6 + stage * 0.14
+    };
+}
+
+function stageNeedsBoss() {
+    return game.stage % BOSS_STAGE_INTERVAL === 0;
+}
+
+function randomEdgePosition(radius) {
+    const side = Math.floor(Math.random() * 4);
+
+    if (side === 0) {
+        return { x: Math.random() * canvas.width, y: -radius };
     }
-  }
 
-  updateHud();
-  gameMessage.classList.add("hidden");
-  showScreen(gameScreen);
-
-  cancelAnimationFrame(animationId);
-  animationId = requestAnimationFrame(gameLoop);
-}
-
-function createEnemy(levelData) {
-  const side = Math.floor(Math.random() * 4);
-  const margin = 60;
-  let x;
-  let y;
-
-  if (side === 0) {
-    x = randomBetween(0, W);
-    y = -margin;
-  } else if (side === 1) {
-    x = W + margin;
-    y = randomBetween(0, H);
-  } else if (side === 2) {
-    x = randomBetween(0, W);
-    y = H + margin;
-  } else {
-    x = -margin;
-    y = randomBetween(0, H);
-  }
-
-  return {
-    x,
-    y,
-    radius: randomBetween(18, 27),
-    hp: levelData.hp,
-    maxHp: levelData.hp,
-    speed: levelData.speed * randomBetween(0.75, 1.25),
-    color: Math.random() > 0.5 ? "#ff83bd" : "#a98bff",
-    frozen: 0,
-    poison: 0,
-    poisonTick: 0,
-    isBoss: false,
-    hitFlash: 0
-  };
-}
-
-function createBoss() {
-  return {
-    x: W / 2,
-    y: 130,
-    radius: 78,
-    hp: levels[3].hp,
-    maxHp: levels[3].hp,
-    speed: levels[3].speed,
-    color: "#ff668b",
-    frozen: 0,
-    poison: 0,
-    poisonTick: 0,
-    isBoss: true,
-    hitFlash: 0,
-    contactDamage: 16
-  };
-}
-
-function shoot(normal = true) {
-  if (!running) return;
-
-  const now = performance.now();
-  const cooldown = normal ? 220 : 560;
-
-  if (now - (normal ? lastShot : lastBurst) < cooldown) return;
-
-  if (normal) {
-    lastShot = now;
-  } else {
-    lastBurst = now;
-  }
-
-  const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-
-  if (normal) {
-    bullets.push(createBullet(angle, false));
-  } else {
-    for (let i = -2; i <= 2; i++) {
-      bullets.push(createBullet(angle + i * 0.16, true));
+    if (side === 1) {
+        return { x: canvas.width + radius, y: Math.random() * canvas.height };
     }
-  }
+
+    if (side === 2) {
+        return { x: Math.random() * canvas.width, y: canvas.height + radius };
+    }
+
+    return { x: -radius, y: Math.random() * canvas.height };
 }
 
-function createBullet(angle, burst) {
-  const characterInfo = characterData[selectedCharacter];
+function spawnEnemy(forceType = null) {
+    const difficulty = getDifficulty(game.stage);
+    const type = forceType || (Math.random() < 0.16 ? "elite" : "normal");
+    const isElite = type === "elite";
 
-  return {
-    x: player.x + Math.cos(angle) * 34,
-    y: player.y + Math.sin(angle) * 34,
-    vx: Math.cos(angle) * (burst ? 8.8 : 9.8),
-    vy: Math.sin(angle) * (burst ? 8.8 : 9.8),
-    radius: burst ? 12 : 8,
-    damage: burst ? 18 : 10,
-    life: burst ? 115 : 92,
-    burst,
-    color: characterInfo.bulletColor
-  };
-}
+    const radius = isElite ? 27 : 20;
+    const pos = randomEdgePosition(radius);
 
-function applySpecialEffect(enemy) {
-  if (selectedCharacter === "miku") {
-    enemy.frozen = Math.max(enemy.frozen, 150);
-  } else {
-    enemy.poison = Math.max(enemy.poison, 240);
-  }
-}
+    const baseHp = isElite ? 92 : 56;
+    const baseDamage = isElite ? 14 : 9;
 
-function addParticles(x, y, color, count = 10) {
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x,
-      y,
-      vx: randomBetween(-2.5, 2.5),
-      vy: randomBetween(-2.5, 2.5),
-      life: randomBetween(18, 38),
-      size: randomBetween(2, 5),
-      color
+    const hp = Math.round(
+        baseHp *
+        difficulty.enemyHp *
+        (isElite ? difficulty.eliteHp : 1)
+    );
+
+    game.enemies.push({
+        type,
+        x: pos.x,
+        y: pos.y,
+        radius,
+        speed:
+            (isElite ? 78 : 92) *
+            difficulty.enemySpeed,
+        maxHealth: hp,
+        health: hp,
+        contactDamage: Math.round(
+            baseDamage * difficulty.enemyDamage
+        ),
+        contactCooldownUntil: 0,
+        image: isElite ? images.eliteEnemy : images.normalEnemy,
+        color: isElite ? "#a45cff" : "#ff5566",
+        gold: isElite ? 16 : 5,
+        xp: isElite ? 28 : 12
     });
-  }
 }
 
-function update(dt) {
-  const levelData = levels[selectedLevel];
-  elapsed += dt;
+function spawnAngryKirbyBoss() {
+    const difficulty = getDifficulty(game.stage);
+    const baseHp = 180;
+    const hp = Math.round(
+        baseHp *
+        difficulty.enemyHp *
+        difficulty.bossHp
+    );
 
-  updatePlayer(dt);
-  updateBullets(dt);
-  updateEnemies(dt, levelData);
-  updateParticles(dt);
-
-  if (!levelData.boss && enemies.length === 0) {
-    finishGame(true);
-    return;
-  }
-
-  if (levelData.boss && enemies.length === 0) {
-    finishGame(true);
-    return;
-  }
-
-  updateHud();
-}
-
-function updatePlayer(dt) {
-  const moveSpeed = player.speed * dt;
-
-  if (keys["w"] || keys["arrowup"]) player.y -= moveSpeed;
-  if (keys["s"] || keys["arrowdown"]) player.y += moveSpeed;
-  if (keys["a"] || keys["arrowleft"]) player.x -= moveSpeed;
-  if (keys["d"] || keys["arrowright"]) player.x += moveSpeed;
-
-  player.x = clamp(player.x, player.radius, W - player.radius);
-  player.y = clamp(player.y, player.radius, H - player.radius);
-
-  if (player.invincible > 0) {
-    player.invincible -= dt;
-  }
-}
-
-function updateBullets(dt) {
-  bullets.forEach((bullet) => {
-    bullet.x += bullet.vx * dt;
-    bullet.y += bullet.vy * dt;
-    bullet.life -= dt;
-
-    enemies.forEach((enemy) => {
-      if (bullet.life <= 0) return;
-
-      const hitDistance = bullet.radius + enemy.radius;
-      if (distance(bullet.x, bullet.y, enemy.x, enemy.y) < hitDistance) {
-        enemy.hp -= bullet.damage;
-        enemy.hitFlash = 10;
-        applySpecialEffect(enemy);
-        addParticles(bullet.x, bullet.y, bullet.color, bullet.burst ? 14 : 7);
-        bullet.life = 0;
-      }
+    game.enemies.push({
+        type: "boss",
+        name: "憤怒的卡比",
+        x: canvas.width / 2,
+        y: 85,
+        radius: 58,
+        speed: 57 * difficulty.enemySpeed,
+        maxHealth: hp,
+        health: hp,
+        contactDamage: Math.round(17 * difficulty.enemyDamage),
+        contactCooldownUntil: 0,
+        image: images.angryKirbyBoss,
+        color: "#ff87c3",
+        gold: 120,
+        xp: 160
     });
-  });
 
-  bullets = bullets.filter((bullet) => {
-    return (
-      bullet.life > 0 &&
-      bullet.x > -40 &&
-      bullet.x < W + 40 &&
-      bullet.y > -40 &&
-      bullet.y < H + 40
-    );
-  });
+    game.bossSpawned = true;
+    addFloatingText(canvas.width / 2, 140, "BOSS：憤怒的卡比！", "#ffcc00", 24);
 }
 
-function updateEnemies(dt, levelData) {
-  enemies.forEach((enemy) => {
-    const dx = player.x - enemy.x;
-    const dy = player.y - enemy.y;
-    const angle = Math.atan2(dy, dx);
-
-    let speedMultiplier = 1;
-
-    if (enemy.frozen > 0) {
-      enemy.frozen -= dt;
-      speedMultiplier = 0.38;
+function updateGame(deltaMs, now) {
+    if (!game || !game.running || game.paused || game.levelUpPending || game.stageRewardReady) {
+        return;
     }
 
-    if (enemy.poison > 0) {
-      enemy.poison -= dt;
-      enemy.poisonTick += dt;
+    game.elapsedMs += deltaMs;
 
-      while (enemy.poisonTick >= 60) {
-        enemy.hp -= 3;
-        enemy.poisonTick -= 60;
-        addParticles(enemy.x, enemy.y, "#45e6be", 3);
-      }
-    } else {
-      enemy.poisonTick = 0;
+    updatePlayer(deltaMs, now);
+    updateSpawning(deltaMs);
+    updateEnemies(deltaMs, now);
+    updateBullets(deltaMs);
+    updateParticles(deltaMs);
+    updateFloatingTexts(deltaMs);
+
+    if (game.player.ultimateCharge < 100) {
+        game.player.ultimateCharge = Math.min(
+            100,
+            game.player.ultimateCharge + deltaMs * 0.0018
+        );
     }
 
-    if (enemy.hitFlash > 0) {
-      enemy.hitFlash -= dt;
+    updateUI();
+}
+
+function updatePlayer(deltaMs, now) {
+    const player = game.player;
+    let moveX = 0;
+    let moveY = 0;
+
+    if (keys.up) moveY -= 1;
+    if (keys.down) moveY += 1;
+    if (keys.left) moveX -= 1;
+    if (keys.right) moveX += 1;
+
+    if (moveX !== 0 || moveY !== 0) {
+        const length = Math.hypot(moveX, moveY);
+        moveX /= length;
+        moveY /= length;
+
+        player.facingX = moveX;
+        player.facingY = moveY;
     }
 
-    enemy.x += Math.cos(angle) * enemy.speed * speedMultiplier * dt;
-    enemy.y += Math.sin(angle) * enemy.speed * speedMultiplier * dt;
+    const dashActive = now < player.dashUntil;
+    const speed = player.speed * (dashActive ? 2.55 : 1);
 
-    const collisionDistance = player.radius + enemy.radius - 5;
-    if (
-      distance(player.x, player.y, enemy.x, enemy.y) < collisionDistance &&
-      player.invincible <= 0
-    ) {
-      const damage = enemy.isBoss ? enemy.contactDamage : 10;
-      player.hp -= damage;
-      player.invincible = 44;
-      addParticles(player.x, player.y, "#ff6d8b", 15);
+    player.x += moveX * speed * deltaMs / 1000;
+    player.y += moveY * speed * deltaMs / 1000;
 
-      const pushAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-      player.x += Math.cos(pushAngle) * 24;
-      player.y += Math.sin(pushAngle) * 24;
+    player.x = clamp(player.x, player.radius, canvas.width - player.radius);
+    player.y = clamp(player.y, player.radius, canvas.height - player.radius);
 
-      if (player.hp <= 0) {
-        player.hp = 0;
-        updateHud();
-        finishGame(false);
-      }
+    if (now - player.lastAttackAt >= player.attackIntervalMs) {
+        autoFire(now);
     }
-  });
-
-  const removedEnemies = enemies.filter((enemy) => enemy.hp <= 0);
-
-  removedEnemies.forEach((enemy) => {
-    score += enemy.isBoss ? 1000 : 100;
-    addParticles(enemy.x, enemy.y, enemy.isBoss ? "#ff6f97" : "#ffd56a", enemy.isBoss ? 38 : 18);
-  });
-
-  enemies = enemies.filter((enemy) => enemy.hp > 0);
-
-  if (!levelData.boss && enemies.length < 4 && elapsed > bossSpawnTimer + 100) {
-    bossSpawnTimer = elapsed;
-  }
 }
 
-function updateParticles(dt) {
-  particles.forEach((particle) => {
-    particle.x += particle.vx * dt;
-    particle.y += particle.vy * dt;
-    particle.life -= dt;
-  });
+function updateSpawning(deltaMs) {
+    if (game.stageRewardReady || game.bossDefeated) {
+        return;
+    }
 
-  particles = particles.filter((particle) => particle.life > 0);
+    if (game.stageKills >= KILLS_PER_STAGE) {
+        if (stageNeedsBoss() && !game.bossSpawned) {
+            spawnAngryKirbyBoss();
+            return;
+        }
+
+        if (!stageNeedsBoss() || game.bossDefeated) {
+            completeStage();
+            return;
+        }
+    }
+
+    if (game.stageKills < KILLS_PER_STAGE) {
+        game.spawnTimer += deltaMs;
+
+        const interval = getDifficulty(game.stage).spawnInterval;
+
+        if (game.spawnTimer >= interval) {
+            game.spawnTimer = 0;
+            spawnEnemy();
+        }
+    }
 }
 
-function updateHud() {
-  playerHpText.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-  playerHpBar.style.width = `${(player.hp / player.maxHp) * 100}%`;
-  scoreText.textContent = score;
-  enemyCountText.textContent = enemies.length;
+function updateEnemies(deltaMs, now) {
+    const player = game.player;
+
+    for (const enemy of game.enemies) {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.hypot(dx, dy) || 1;
+
+        enemy.x += dx / distance * enemy.speed * deltaMs / 1000;
+        enemy.y += dy / distance * enemy.speed * deltaMs / 1000;
+
+        if (distance < enemy.radius + player.radius) {
+            damagePlayer(enemy, now);
+        }
+    }
 }
 
-function drawBackground() {
-  ctx.clearRect(0, 0, W, H);
+function damagePlayer(enemy, now) {
+    const player = game.player;
 
-  const gradient = ctx.createLinearGradient(0, 0, W, H);
-  gradient.addColorStop(0, "#16285a");
-  gradient.addColorStop(1, "#351c52");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, W, H);
+    if (now < player.invulnerableUntil || now < enemy.contactCooldownUntil) {
+        return;
+    }
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
-  for (let i = 0; i < 38; i++) {
-    const x = (i * 107 + 37) % W;
-    const y = (i * 61 + 41) % H;
-    const size = (i % 3) + 1;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
+    const damage = enemy.contactDamage;
 
-  ctx.strokeStyle = "rgba(176, 193, 255, 0.12)";
-  ctx.lineWidth = 1;
-  for (let x = 0; x < W; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
-    ctx.stroke();
-  }
+    player.health -= damage;
+    player.invulnerableUntil = now + 620;
+    enemy.contactCooldownUntil = now + 900;
 
-  for (let y = 0; y < H; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(W, y);
-    ctx.stroke();
-  }
+    createParticles(player.x, player.y, "#ff3344", 14, 170);
+    addFloatingText(player.x, player.y - 26, `-${damage}`, "#ff6677", 16);
+
+    if (player.health <= 0) {
+        player.health = 0;
+        gameOver(false);
+    }
 }
 
-function drawPlayer() {
-  const characterImage = images[characterData[selectedCharacter].image];
+function autoFire(now) {
+    const player = game.player;
 
-  ctx.save();
+    if (game.enemies.length === 0) {
+        return;
+    }
 
-  if (player.invincible > 0 && Math.floor(player.invincible / 4) % 2 === 0) {
-    ctx.globalAlpha = 0.45;
-  }
+    const nearest = getNearestEnemy();
 
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.radius + 10, 0, Math.PI * 2);
-  ctx.fillStyle = selectedCharacter === "miku"
-    ? "rgba(132, 235, 255, 0.32)"
-    : "rgba(74, 244, 193, 0.30)";
-  ctx.fill();
+    if (!nearest) {
+        return;
+    }
 
-  if (characterImage.complete && characterImage.naturalWidth > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(
-      characterImage,
-      player.x - player.radius,
-      player.y - player.radius,
-      player.radius * 2,
-      player.radius * 2
-    );
-    ctx.restore();
+    player.lastAttackAt = now;
 
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fillStyle = characterData[selectedCharacter].color;
-    ctx.fill();
-  }
+    const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
 
-  ctx.restore();
+    player.facingX = Math.cos(angle);
+    player.facingY = Math.sin(angle);
+
+    if (player.weaponType === "pistol") {
+        fireBullet(angle, getPlayerDamage(), 520, "#00ffff", "normal");
+        return;
+    }
+
+    if (player.weaponType === "shotgun") {
+        fireShotgun(angle, 5, 0.58, getPlayerDamage() * 0.75, false);
+        return;
+    }
+
+    if (player.weaponType === "explosive") {
+        fireBullet(
+            angle,
+            getPlayerDamage() * 1.18,
+            470,
+            "#ff7a00",
+            "explosive",
+            78
+        );
+    }
 }
 
-function drawMusicalNote(x, y, size, color) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.fillStyle = color;
-  ctx.strokeStyle = "rgba(255,255,255,0.45)";
-  ctx.lineWidth = 1.2;
+function useShotgun(now = performance.now()) {
+    if (!game || !game.running || game.paused || game.levelUpPending || game.stageRewardReady) {
+        return;
+    }
 
-  ctx.beginPath();
-  ctx.ellipse(-size * 0.24, size * 0.31, size * 0.28, size * 0.2, -0.25, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+    const player = game.player;
+    const nearest = getNearestEnemy();
 
-  ctx.fillRect(0, -size * 0.68, size * 0.13, size * 1.04);
+    if (!nearest) {
+        return;
+    }
 
-  ctx.beginPath();
-  ctx.moveTo(size * 0.1, -size * 0.68);
-  ctx.lineTo(size * 0.67, -size * 0.5);
-  ctx.lineTo(size * 0.67, -size * 0.28);
-  ctx.lineTo(size * 0.1, -size * 0.43);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+    const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    player.facingX = Math.cos(angle);
+    player.facingY = Math.sin(angle);
 
-  ctx.restore();
+    if (player.weaponType === "pistol") {
+        fireBullet(angle, getPlayerDamage() * 1.05, 580, "#ffff66", "normal");
+        return;
+    }
+
+    if (player.weaponType === "shotgun") {
+        fireShotgun(angle, 6, 0.72, getPlayerDamage() * 0.92, false);
+        return;
+    }
+
+    if (now - player.lastExplosiveShotAt < player.explosiveShotCooldownMs) {
+        return;
+    }
+
+    player.lastExplosiveShotAt = now;
+    fireShotgun(angle, 8, 0.68, getPlayerDamage() * 0.88, true);
+    createParticles(player.x, player.y, "#ff8c00", 18, 170);
 }
 
-function drawBullets() {
-  bullets.forEach((bullet) => {
-    ctx.save();
-    ctx.shadowBlur = bullet.burst ? 20 : 12;
-    ctx.shadowColor = bullet.color;
-    drawMusicalNote(bullet.x, bullet.y, bullet.burst ? 16 : 11, bullet.color);
-    ctx.restore();
-  });
+function fireShotgun(angle, pelletCount, spread, damage, explosive) {
+    for (let i = 0; i < pelletCount; i += 1) {
+        const offset = pelletCount === 1
+            ? 0
+            : ((i / (pelletCount - 1)) - 0.5) * spread;
+
+        fireBullet(
+            angle + offset,
+            damage,
+            explosive ? 420 : 500,
+            explosive ? "#ff7700" : "#ffdd66",
+            explosive ? "explosive" : "normal",
+            explosive ? 70 : 0
+        );
+    }
 }
 
-function drawEnemy(enemy) {
-  ctx.save();
+function fireBullet(angle, damage, speed, color, type = "normal", explosionRadius = 0) {
+    const player = game.player;
 
-  if (enemy.isBoss && images.angryKirby.complete && images.angryKirby.naturalWidth > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(
-      images.angryKirby,
-      enemy.x - enemy.radius,
-      enemy.y - enemy.radius,
-      enemy.radius * 2,
-      enemy.radius * 2
-    );
-    ctx.restore();
-
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = enemy.hitFlash > 0 ? "#ffffff" : "#ff85a5";
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#ffffff";
-    ctx.stroke();
-
-    ctx.fillStyle = "#2a2548";
-    ctx.beginPath();
-    ctx.arc(enemy.x - enemy.radius * 0.25, enemy.y - 4, 3, 0, Math.PI * 2);
-    ctx.arc(enemy.x + enemy.radius * 0.25, enemy.y - 4, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  if (enemy.frozen > 0) {
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius + 7, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(140, 238, 255, 0.9)";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-  }
-
-  if (enemy.poison > 0) {
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius + 9, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(74, 241, 185, 0.9)";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([5, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  const barWidth = enemy.isBoss ? 132 : 48;
-  const barHeight = enemy.isBoss ? 10 : 6;
-  const barX = enemy.x - barWidth / 2;
-  const barY = enemy.y - enemy.radius - 18;
-
-  ctx.fillStyle = "rgba(0, 0, 0, 0.46)";
-  ctx.fillRect(barX, barY, barWidth, barHeight);
-
-  ctx.fillStyle = enemy.isBoss ? "#ff5479" : "#ffdd7d";
-  ctx.fillRect(barX, barY, barWidth * (enemy.hp / enemy.maxHp), barHeight);
-
-  if (enemy.isBoss) {
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 16px Microsoft JhengHei";
-    ctx.textAlign = "center";
-    ctx.fillText("憤怒的卡比", enemy.x, barY - 9);
-  }
-
-  ctx.restore();
+    game.bullets.push({
+        x: player.x + Math.cos(angle) * (player.radius + 4),
+        y: player.y + Math.sin(angle) * (player.radius + 4),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: type === "explosive" ? 6 : 4,
+        damage,
+        color,
+        type,
+        explosionRadius,
+        lifeMs: type === "explosive" ? 950 : 1250
+    });
 }
 
-function drawEnemies() {
-  enemies.forEach(drawEnemy);
+function useUltimate() {
+    if (!game || !game.running || game.paused || game.levelUpPending || game.stageRewardReady) {
+        return;
+    }
+
+    const player = game.player;
+
+    if (player.ultimateCharge < 100) {
+        return;
+    }
+
+    player.ultimateCharge = 0;
+
+    const damage = getPlayerDamage() * 4.4;
+    const radius = 220;
+
+    createParticles(player.x, player.y, "#ff0055", 52, 270);
+    createParticles(player.x, player.y, "#ffcc00", 42, 230);
+
+    const targets = [...game.enemies];
+
+    for (const enemy of targets) {
+        const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+
+        if (distance <= radius + enemy.radius) {
+            dealDamageToEnemy(enemy, damage, "#ffcc00");
+        }
+    }
+
+    addFloatingText(player.x, player.y - 48, "終極技能！", "#ffcc00", 23);
 }
 
-function drawParticles() {
-  particles.forEach((particle) => {
-    ctx.save();
-    ctx.globalAlpha = particle.life / 38;
-    ctx.fillStyle = particle.color;
-    ctx.beginPath();
-    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  });
+function useDash(now = performance.now()) {
+    if (!game || !game.running || game.paused || game.levelUpPending || game.stageRewardReady) {
+        return;
+    }
+
+    const player = game.player;
+
+    if (now - player.lastDashAt < player.dashCooldownMs) {
+        return;
+    }
+
+    player.lastDashAt = now;
+    player.dashUntil = now + 260;
+    player.invulnerableUntil = now + 300;
+
+    createParticles(player.x, player.y, "#00ffcc", 20, 180);
 }
 
-function drawAim() {
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.75)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(mouse.x, mouse.y, 10, 0, Math.PI * 2);
-  ctx.moveTo(mouse.x - 16, mouse.y);
-  ctx.lineTo(mouse.x + 16, mouse.y);
-  ctx.moveTo(mouse.x, mouse.y - 16);
-  ctx.lineTo(mouse.x, mouse.y + 16);
-  ctx.stroke();
-  ctx.restore();
+function updateBullets(deltaMs) {
+    for (let index = game.bullets.length - 1; index >= 0; index -= 1) {
+        const bullet = game.bullets[index];
+
+        bullet.x += bullet.vx * deltaMs / 1000;
+        bullet.y += bullet.vy * deltaMs / 1000;
+        bullet.lifeMs -= deltaMs;
+
+        let hitEnemy = null;
+
+        for (const enemy of game.enemies) {
+            const distance = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
+
+            if (distance < bullet.radius + enemy.radius) {
+                hitEnemy = enemy;
+                break;
+            }
+        }
+
+        if (hitEnemy) {
+            if (bullet.type === "explosive") {
+                explodeBullet(bullet);
+            } else {
+                dealDamageToEnemy(hitEnemy, bullet.damage, bullet.color);
+            }
+
+            game.bullets.splice(index, 1);
+            continue;
+        }
+
+        const outOfBounds =
+            bullet.x < -30 ||
+            bullet.x > canvas.width + 30 ||
+            bullet.y < -30 ||
+            bullet.y > canvas.height + 30;
+
+        if (bullet.lifeMs <= 0 || outOfBounds) {
+            if (bullet.type === "explosive") {
+                explodeBullet(bullet);
+            }
+
+            game.bullets.splice(index, 1);
+        }
+    }
 }
 
-function draw() {
-  drawBackground();
-  drawParticles();
-  drawBullets();
-  drawEnemies();
-  drawPlayer();
-  drawAim();
+function explodeBullet(bullet) {
+    createParticles(bullet.x, bullet.y, "#ff5500", 22, 220);
+    createParticles(bullet.x, bullet.y, "#ffcc00", 14, 175);
+
+    const targets = [...game.enemies];
+
+    for (const enemy of targets) {
+        const distance = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
+
+        if (distance <= bullet.explosionRadius + enemy.radius) {
+            const falloff = Math.max(0.45, 1 - distance / (bullet.explosionRadius + enemy.radius));
+            dealDamageToEnemy(enemy, bullet.damage * falloff, "#ff8800");
+        }
+    }
 }
 
-function gameLoop(timestamp) {
-  if (!running) return;
+function dealDamageToEnemy(enemy, rawDamage, color) {
+    if (!game.enemies.includes(enemy)) {
+        return;
+    }
 
-  const dt = Math.min((timestamp - lastTime) / 16.67, 2.2);
-  lastTime = timestamp;
+    const damage = Math.max(1, Math.round(rawDamage));
+    enemy.health -= damage;
 
-  update(dt);
-  draw();
+    createParticles(enemy.x, enemy.y, color, 5, 105);
+    addFloatingText(enemy.x, enemy.y - enemy.radius, `-${damage}`, color, 13);
 
-  if (running) {
-    animationId = requestAnimationFrame(gameLoop);
-  }
+    if (enemy.health <= 0) {
+        killEnemy(enemy);
+    }
 }
 
-function finishGame(won) {
-  running = false;
-  cancelAnimationFrame(animationId);
+function killEnemy(enemy) {
+    const index = game.enemies.indexOf(enemy);
 
-  messageTitle.textContent = won ? "關卡完成！" : "挑戰失敗";
-  messageText.textContent = won
-    ? `你使用${characterData[selectedCharacter].name}成功完成「${levels[selectedLevel].name}」！最終分數：${score}`
-    : "生命值歸零了。調整走位與爆裂彈時機後，再試一次吧！";
+    if (index === -1) {
+        return;
+    }
 
-  gameMessage.classList.remove("hidden");
+    game.enemies.splice(index, 1);
+
+    createParticles(enemy.x, enemy.y, enemy.color, enemy.type === "boss" ? 48 : 18, enemy.type === "boss" ? 250 : 140);
+
+    game.kills += 1;
+    game.gold += enemy.gold;
+    gainXp(enemy.xp);
+
+    if (enemy.type === "boss") {
+        game.bossDefeated = true;
+        addFloatingText(enemy.x, enemy.y - 75, "擊敗憤怒的卡比！", "#ffcc00", 22);
+        updateAchievements();
+        return;
+    }
+
+    game.stageKills += 1;
+    updateAchievements();
 }
 
-function canvasPosition(event) {
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / rect.width) * W;
-  mouse.y = ((event.clientY - rect.top) / rect.height) * H;
+function gainXp(amount) {
+    const player = game.player;
+    player.xp += amount;
+
+    while (player.xp >= player.xpToNext) {
+        player.xp -= player.xpToNext;
+        player.level += 1;
+        player.xpToNext = Math.round(player.xpToNext * 1.22);
+        player.maxHealth += 8;
+        player.health = Math.min(player.maxHealth, player.health + 22);
+        player.baseDamage += 0.8;
+
+        upgradeWeaponIfNeeded();
+        requestLevelUp();
+    }
 }
 
-startButton.addEventListener("click", () => showScreen(levelScreen));
+function upgradeWeaponIfNeeded() {
+    const player = game.player;
 
-document.querySelectorAll(".back-home").forEach((button) => {
-  button.addEventListener("click", () => showScreen(homeScreen));
-});
+    if (player.level >= 5 && player.weaponLevel < 2) {
+        player.weaponLevel = 2;
+        player.weaponType = "shotgun";
+        addFloatingText(player.x, player.y - 55, "武器進化：霰彈槍！", "#ffdd66", 19);
+    }
 
-document.querySelectorAll(".level-card").forEach((button) => {
-  button.addEventListener("click", () => {
-    selectedLevel = Number(button.dataset.level);
-    showScreen(characterScreen);
-  });
-});
+    if (player.level >= 10 && player.weaponLevel < 3) {
+        player.weaponLevel = 3;
+        player.weaponType = "explosive";
+        addFloatingText(player.x, player.y - 55, "武器進化：爆裂彈！", "#ff7700", 19);
+    }
+}
 
-document.querySelectorAll(".character-button").forEach((button) => {
-  button.addEventListener("click", () => {
-    selectedCharacter = button.dataset.character;
-    startGame(selectedLevel, selectedCharacter);
-  });
-});
+function requestLevelUp() {
+    if (game.levelUpPending || game.stageRewardReady) {
+        return;
+    }
 
-backToLevelsButton.addEventListener("click", () => {
-  showScreen(levelScreen);
-});
-
-leaveGameButton.addEventListener("click", () => {
-  running = false;
-  cancelAnimationFrame(animationId);
-  showScreen(levelScreen);
-});
-
-restartButton.addEventListener("click", () => {
-  startGame(selectedLevel, selectedCharacter);
-});
-
-messageBackButton.addEventListener("click", () => {
-  gameMessage.classList.add("hidden");
-  showScreen(levelScreen);
-});
-
-window.addEventListener("keydown", (event) => {
-  const key = event.key.toLowerCase();
-  keys[key] = true;
-
-  if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
-    event.preventDefault();
-  }
-
-  if (key === " " && running) {
-    shoot(true);
-  }
-
-  if (key === "e" && running) {
-    shoot(false);
-  }
-});
-
-window.addEventListener("keyup", (event) => {
-  keys[event.key.toLowerCase()] = false;
-});
-
-canvas.addEventListener("mousemove", (event) => {
-  canvasPosition(event);
-});
-
-canvas.addEventListener("click", (event) => {
-  canvasPosition(event);
-  shoot(true);
-});
-
-canvas.addEventListener("contextmenu", (event) => {
-  event.preventDefault();
-});
+    game.levelUpPending = true;
