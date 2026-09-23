@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#111111">
+    <title>殭屍生存：極速升級 (手機版)</title>
+    <style>
+        body { text-align: center; background-color: #111; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; overflow-x: hidden; }
+        
+        #ui-container { width: 70vw; max-width: 1800px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; }
+        #xp-container { width: 70vw; max-width: 1800px; background-color: #333; height: 10px; margin: 5px auto 0 auto; position: relative; border-radius: 5px; overflow: hidden; }
+        #game-wrapper { position: relative; width: 70vw; max-width: 1800px; aspect-ratio: 16 / 9; margin: 10px auto; overflow: hidden; border: 2px solid #555; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        
+        canvas { width: 100%; height: 100%; background-color: #1a1a1a; display: block; }
+        
+        .stat-box { font-size: 16px; font-weight: bold; color: #ffcc00; text-align: left; line-height: 1.5; }
+        
+        #ult-container { width: 250px; background-color: #444; border: 2px solid #777; height: 18px; border-radius: 9px; overflow: hidden; position: relative; margin-bottom: 5px;}
+        #ult-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff0055, #ffcc00); transition: width 0.1s; }
+        #ult-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 12px; line-height: 18px; color: white; font-weight: bold; }
+
+        #dash-container { width: 250px; background-color: #222; border: 2px solid #555; height: 18px; border-radius: 9px; overflow: hidden; position: relative; margin-bottom: 5px;}
+        #dash-bar { width: 100%; height: 100%; background: #00ffcc; transition: width 0.1s; }
+        #dash-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 12px; line-height: 18px; color: white; font-weight: bold; }
+
+        #xp-bar { width: 0%; height: 100%; background-color: #00ffff; transition: width 0.1s; }
+        
+        .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        
+        .action-btn { background: #ffcc00; color: #111; font-size: 20px; font-weight: bold; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; margin: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .action-btn:hover { background: #fff; transform: scale(1.05); box-shadow: 0 0 15px #ffcc00; }
+        .action-btn:disabled { background: #555; color: #222; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .skill-btn { background: #222; border: 2px solid #00ffff; color: white; padding: 15px 30px; margin: 10px; font-size: 18px; cursor: pointer; border-radius: 8px; width: 300px; transition: 0.2s; }
+        .skill-btn:hover { background: #00ffff; color: black; font-weight: bold; transform: scale(1.05); }
+        .evo-btn { border-color: #ffd700; background: #332b00; box-shadow: 0 0 15px #ffd700; }
+        .evo-btn:hover { background: #ffd700; color: black; }
+
+        h1.game-title { color: #ff0055; font-size: 56px; text-shadow: 0 0 20px #ff0055; margin-bottom: 10px; letter-spacing: 5px; }
+        p.game-desc { color: #ccc; font-size: 16px; line-height: 1.6; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid #444; max-width: 80%; margin-bottom: 20px;}
+        
+        .shop-panel { background: #222; border: 2px solid #ffcc00; border-radius: 10px; padding: 20px; text-align: left; width: 400px; max-height: 400px; overflow-y: auto;}
+        
+        /* 裝備相關 CSS */
+        .equip-slot { width: 100%; height: 22%; min-height: 60px; border: 2px dashed #777; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #222; cursor: pointer; transition: 0.2s; position: relative; }
+        .equip-slot:hover { border-color: #fff; }
+        .equip-slot.filled { border-style: solid; }
+        .equip-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; align-content: flex-start; width: 100%; }
+        
+        .equip-item { width: 105px; height: 135px; border: 2px solid #555; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; background: #333; transition: 0.2s; position: relative; padding: 6px; box-sizing: border-box; }
+        .equip-item:hover { transform: scale(1.03); z-index: 2; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .equip-card-content { cursor: pointer; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .equip-btn-group { display: flex; gap: 4px; width: 100%; justify-content: center; margin-top: 4px; }
+        
+        .eq-btn { background: #555; color: white; border: none; border-radius: 4px; padding: 4px 0; cursor: pointer; font-size: 11px; font-weight: bold; width: 48%; transition: 0.1s;}
+        .eq-btn:hover { background: #00ffcc; color: black; }
+        .eq-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .eq-btn.sell:hover { background: #ff4444; color: white; }
+
+        .rarity-N { border-color: #aaa; box-shadow: 0 0 3px #aaa; }
+        .rarity-R { border-color: #00aaff; box-shadow: 0 0 6px #00aaff; }
+        .rarity-SR { border-color: #b266ff; box-shadow: 0 0 10px #b266ff; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #222; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #888; }
+
+        .map-lock { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); color: white; display: none; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; border-radius: 8px; z-index: 5; pointer-events: none; }
+
+        /* 寶箱輪盤槽 CSS */
+        .chest-slot { width: 130px; height: 160px; background: #222; border: 3px solid #777; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: white; transition: 0.3s; padding: 10px; box-sizing: border-box; text-align: center; }
+        .chest-slot.active { border-color: #ffd700; box-shadow: 0 0 25px #ffd700; background: #443300; transform: scale(1.1); z-index: 2; }
+
+        /* ===================== 手機版 ===================== */
+        html, body { height: 100%; }
+        body { padding: 0; overflow: hidden; position: fixed; inset: 0; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; overscroll-behavior: none; }
+        button { touch-action: manipulation; font-family: inherit; }
+        #game-wrapper { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; aspect-ratio: auto; margin: 0; border: none; box-shadow: none; }
+
+        #hud { position: absolute; top: 0; left: 0; right: 0; z-index: 6; pointer-events: none; padding: calc(env(safe-area-inset-top) + 6px) calc(env(safe-area-inset-right) + 56px) 0 calc(env(safe-area-inset-left) + 8px); box-sizing: border-box; }
+        #ui-container { width: 100%; max-width: none; align-items: flex-start; gap: 8px; }
+        .stat-box { font-size: 12px; line-height: 1.45; text-shadow: 0 1px 2px #000, 0 0 4px #000; background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 6px; }
+        #ui-container > div:last-child { display: none; }
+        #dash-container, #ult-container { width: 120px; height: 14px; border-radius: 7px; margin-bottom: 4px; }
+        #dash-text, #ult-text { font-size: 10px; line-height: 14px; }
+        #xp-container { width: 100%; max-width: none; height: 6px; margin: 5px 0 0 0; }
+        #boss-hp-container { top: calc(env(safe-area-inset-top) + 70px) !important; width: 80% !important; height: 20px !important; }
+        #boss-hp-container > div:last-child { font-size: 12px !important; line-height: 20px !important; }
+
+        #touch-layer { position: absolute; inset: 0; z-index: 3; display: none; }
+        #joy-base { position: absolute; z-index: 4; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.35); display: none; pointer-events: none; }
+        #joy-knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(0,255,255,0.45); border: 2px solid rgba(0,255,255,0.9); box-shadow: 0 0 12px rgba(0,255,255,0.5); }
+        .touch-ctrl { display: none; }
+        body.playing #touch-layer { display: block; }
+        body.playing .touch-ctrl { display: flex; }
+        #pause-touch-btn { position: absolute; z-index: 7; top: calc(env(safe-area-inset-top) + 6px); right: calc(env(safe-area-inset-right) + 8px); width: 42px; height: 42px; border-radius: 10px; border: 2px solid #777; background: rgba(0,0,0,0.55); color: #fff; font-size: 14px; font-weight: bold; align-items: center; justify-content: center; padding: 0; }
+        #touch-actions { position: absolute; z-index: 7; right: calc(env(safe-area-inset-right) + 16px); bottom: calc(env(safe-area-inset-bottom) + 18px); gap: 14px; align-items: flex-end; }
+        .round-btn { position: relative; border-radius: 50%; border: 3px solid #555; background: rgba(30,30,30,0.7); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font-weight: bold; overflow: hidden; transition: transform 0.08s, border-color 0.2s, box-shadow 0.2s; }
+        .round-btn::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill, 0%); background: var(--fill-color, rgba(255,255,255,0.15)); z-index: 0; }
+        .round-btn > span { position: relative; z-index: 1; text-shadow: 0 1px 2px #000; }
+        .rb-label { font-size: 16px; }
+        .rb-sub { font-size: 11px; color: #ddd; margin-top: 2px; }
+        .round-btn:active { transform: scale(0.92); }
+        #dash-touch-btn { width: 76px; height: 76px; --fill-color: rgba(0,255,204,0.25); margin-bottom: 64px; }
+        #dash-touch-btn.ready { border-color: #00ffcc; box-shadow: 0 0 14px rgba(0,255,204,0.6); }
+        #ult-touch-btn { width: 92px; height: 92px; --fill-color: linear-gradient(0deg, rgba(255,0,85,0.45), rgba(255,204,0,0.45)); }
+        #ult-touch-btn.ready { border-color: #ffcc00; box-shadow: 0 0 20px rgba(255,204,0,0.8); animation: ultPulse 1s infinite; }
+        @keyframes ultPulse { 50% { box-shadow: 0 0 32px rgba(255,0,85,0.9); } }
+        #ult-flash { position: absolute; inset: 0; z-index: 5; pointer-events: none; box-shadow: inset 0 0 60px 20px #ff00ff; opacity: 0; transition: opacity 0.25s; }
+
+        /* 選單 / 視窗：可捲動、自動置中 */
+        .modal { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; box-sizing: border-box; padding: calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 10px) calc(env(safe-area-inset-bottom) + 14px) calc(env(safe-area-inset-left) + 10px); }
+        .modal > :first-child { margin-top: auto !important; }
+        .modal > :last-child { margin-bottom: auto !important; }
+        .modal h1 { font-size: 26px !important; margin: 6px 0 8px !important; }
+        .modal h3, .modal h2 { margin: 0 0 8px !important; }
+        h1.game-title { font-size: 44px !important; letter-spacing: 4px; }
+        p.game-desc { max-width: 520px; width: 100%; box-sizing: border-box; font-size: 14px; padding: 12px; margin: 0 0 14px; }
+        .action-btn { font-size: 17px; padding: 11px 22px; margin: 6px; }
+        .action-btn:active:not(:disabled) { transform: scale(0.95); filter: brightness(1.2); }
+        #start-btn { padding: 14px 44px !important; font-size: 22px !important; }
+        #main-menu > div:last-child { flex-wrap: wrap; justify-content: center; gap: 0 !important; max-width: 520px; }
+
+        #achievement-list { width: 100% !important; max-width: 650px; max-height: 60vh !important; box-sizing: border-box; padding: 10px !important; touch-action: pan-y; }
+        #achievement-list > div { gap: 10px; padding: 12px !important; }
+        #achievement-list > div > div:first-child > div:first-child { font-size: 16px !important; }
+        #achievement-list .action-btn { padding: 8px 12px !important; font-size: 14px; flex-shrink: 0; }
+
+        #map-select-modal > div:nth-child(2) { flex-wrap: wrap; justify-content: center; gap: 10px !important; width: 100%; max-width: 720px; margin-bottom: 10px !important; }
+        #map-select-modal > div:nth-child(2) .action-btn { flex: 1 1 180px; margin: 0; padding: 14px 10px !important; font-size: 18px !important; }
+
+        #gacha-modal div[style*="width: 600px"] { width: 100% !important; max-width: 600px; height: auto !important; min-height: 130px; box-sizing: border-box; padding: 10px !important; }
+        #gacha-result div[style*="width: 18%"] { width: 30% !important; font-size: 13px !important; }
+        #gacha-result div[style*="font-size: 24px"] { font-size: 19px !important; }
+        #gacha-modal div[style*="gap: 30px"] { flex-wrap: wrap; justify-content: center; gap: 10px !important; width: 100%; }
+        #gacha-modal div[style*="gap: 30px"] > div { flex: 1 1 260px; max-width: 320px; }
+        #gacha-modal div[style*="gap: 30px"] .action-btn { margin: 4px; padding: 9px 12px !important; font-size: 15px !important; }
+
+        #equip-modal > div[style*="height: 65%"] { flex-direction: column; height: auto !important; width: 100% !important; max-width: 900px; gap: 10px !important; }
+        #equip-modal > div[style*="height: 65%"] > div:first-child { flex-direction: row !important; width: 100% !important; padding: 8px !important; }
+        #equip-modal .equip-slot { height: 70px; min-height: 70px; flex: 1; font-size: 12px; }
+        #equip-modal .equip-slot * { font-size: 11px !important; }
+        #equip-modal .shop-panel { height: 42vh !important; min-height: 220px; touch-action: pan-y; }
+        #inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+        #inventory-grid .equip-item { width: 100%; }
+        #inventory-grid .eq-btn { padding: 7px 0; font-size: 12px; }
+
+        .chest-slot { width: 100px; height: 130px; font-size: 15px; }
+        #chest-slots { flex-wrap: wrap; gap: 12px !important; margin: 16px 0 !important; min-height: 130px !important; }
+        #chest-modal h1 { font-size: 32px !important; }
+
+        .skill-btn { width: min(92vw, 380px); padding: 12px 16px; margin: 6px; font-size: 16px; }
+        #skill-choices { display: flex; flex-direction: column; align-items: center; }
+
+        #pause-modal > div:nth-child(2) { flex-wrap: wrap; justify-content: center; gap: 10px !important; width: 100%; }
+        #pause-modal > div:nth-child(2) > div { width: 100% !important; max-width: 440px; box-sizing: border-box; padding: 12px !important; }
+        #pause-stats-list { font-size: 14px !important; line-height: 1.7 !important; }
+        #pause-skills-list { max-height: 34vh !important; touch-action: pan-y; }
+        #pause-skills-list > div { padding: 8px !important; }
+        #pause-skills-list strong { font-size: 14px !important; }
+        #resume-btn { margin-top: 14px !important; }
+        #pause-modal button#quit-btn { background: #555; color: #fff; }
+
+        #end-title { font-size: 34px !important; }
+        #end-stats { font-size: 15px !important; }
+        #end-damage-chart { width: 100%; display: flex; justify-content: center; }
+        #end-damage-chart > div { width: 100% !important; max-width: 450px; box-sizing: border-box; }
+
+        @media (hover: none) {
+            .action-btn:hover { transform: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+            .skill-btn:hover { background: #222; color: white; font-weight: normal; transform: none; }
+            .evo-btn:hover { background: #332b00; color: white; }
+            .equip-item:hover { transform: none; box-shadow: none; }
+            .skill-btn:active { background: #00ffff; color: black; }
+        }
+        /* 橫向矮螢幕 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            h1.game-title { font-size: 34px !important; margin: 0 0 6px !important; }
+            p.game-desc { font-size: 12px; padding: 8px; margin-bottom: 8px; }
+            .action-btn { padding: 8px 18px; font-size: 15px; }
+            #start-btn { padding: 10px 36px !important; font-size: 19px !important; }
+            #dash-touch-btn { margin-bottom: 40px; width: 66px; height: 66px; }
+            #ult-touch-btn { width: 80px; height: 80px; }
+            #equip-modal > div[style*="height: 65%"] { flex-direction: row; }
+            #equip-modal > div[style*="height: 65%"] > div:first-child { flex-direction: column !important; width: 100px !important; }
+            #equip-modal .shop-panel { height: 58vh !important; }
+            #pause-modal > div:nth-child(2) > div { max-width: 46%; }
+        }
+
+    </style>
+</head>
+<body>
+    
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <div id="hud">
+    <div id="ui-container">
+        <div class="stat-box" id="status">存活時間：00:00 (危險度 0)<br>LV: 1 | 血量：100 | 盾：0 | 金幣：0</div>
+        <div>
+            <div id="dash-container"><div id="dash-bar"></div><div id="dash-text">衝刺就緒</div></div>
+            <div id="ult-container"><div id="ult-bar"></div><div id="ult-text">大招充能中 (0%)</div></div>
+        </div>
+    </div>
+    <div id="xp-container"><div id="xp-bar"></div></div>
+
+        </div>
+        <div id="touch-layer"></div>
+        <div id="joy-base"><div id="joy-knob"></div></div>
+        <button id="pause-touch-btn" class="touch-ctrl" aria-label="暫停">❚❚</button>
+        <div id="touch-actions" class="touch-ctrl">
+            <button id="dash-touch-btn" class="round-btn"><span class="rb-label">衝刺</span><span class="rb-sub" id="dash-touch-sub">就緒</span></button>
+            <button id="ult-touch-btn" class="round-btn"><span class="rb-label">大招</span><span class="rb-sub" id="ult-touch-sub">0%</span></button>
+        </div>
+
+        
+        <div id="boss-hp-container" style="display: none; position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 60%; background: #222; border: 2px solid #ff8800; height: 24px; border-radius: 12px; overflow: hidden; z-index: 5; box-shadow: 0 0 15px rgba(255, 136, 0, 0.6);">
+            <div id="boss-hp-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, #cc0000, #ff8800); transition: width 0.1s;"></div>
+            <div style="position: absolute; width: 100%; top: 0; left: 0; text-align: center; color: white; font-size: 15px; font-weight: bold; line-height: 24px; letter-spacing: 2px;">巨型變異體 BOSS</div>
+        </div>
+        
+        <div id="main-menu" class="modal" style="display: flex;">
+            <h1 class="game-title">無盡屍海</h1>
+            <p class="game-desc">
+                移動：<strong>按住畫面拖曳（虛擬搖桿）</strong> | 衝刺 / 大招：<strong>右下按鈕</strong> | 暫停：<strong>右上 ❚❚</strong><br>
+                升級所需經驗已大幅降低！打倒菁英怪拾取寶箱，體驗極速成長的快感！
+            </p>
+            <div style="margin-bottom: 15px;">
+                <button class="action-btn" id="start-btn" style="padding: 15px 40px; font-size: 24px;">開始生存</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="action-btn" id="open-equip-btn" style="background: #b266ff; color: white;">🎒 裝備庫</button>
+                <button class="action-btn" id="open-gacha-btn" style="background: #ff5500; color: white;">🎁 抽獎中心</button>
+                <button class="action-btn" id="open-achievement-btn" style="background: #ffd700; color: #111;">🏆 成就任務</button>
+            </div>
+        </div>
+
+        <div id="achievement-modal" class="modal">
+            <h1 style="color: #ffd700; text-shadow: 0 0 15px #ffd700; margin-bottom: 10px;">🏆 成就任務</h1>
+            <p style="color: #ccc; margin-top: 0;">達成挑戰即可領取豐厚金幣與專屬神寵！</p>
+            
+            <div id="achievement-list" style="width: 650px; max-height: 450px; overflow-y: auto; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #555; display: flex; flex-direction: column; gap: 10px;">
+                </div>
+            
+            <button class="action-btn" id="close-achievement-btn" style="background: #555; color: white; margin-top: 20px;">返回主選單</button>
+        </div>
+
+        <div id="map-select-modal" class="modal">
+            <h1 style="color: #00ffff; text-shadow: 0 0 10px #00ffff;">選擇作戰區域</h1>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <button class="action-btn" id="start-plains-btn" style="background: #22cc22; font-size: 20px; padding: 15px 30px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                    🌲 平原地圖
+                    <span style="font-size: 14px; color: #111; margin-top: 5px; font-weight: normal;">純粹的生存考驗</span>
+                </button>
+                <button class="action-btn" id="start-desert-btn" style="background: #e9c46a; color: #111; font-size: 20px; padding: 15px 30px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                    🏜️ 荒漠地圖
+                    <span style="font-size: 14px; color: #111; margin-top: 5px; font-weight: normal;">流沙陷阱與衝鋒犬</span>
+                    <div class="map-lock" id="desert-lock">🔒 未開放</div>
+                </button>
+                <button class="action-btn" id="start-cave-btn" style="background: #666699; color: white; font-size: 20px; padding: 15px 30px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                    🦇 洞窟地圖
+                    <span style="font-size: 14px; color: #fff; margin-top: 5px; font-weight: normal;">躲避酸液怪的毒池</span>
+                    <div class="map-lock" id="cave-lock">🔒 未開放</div>
+                </button>
+            </div>
+            <button class="action-btn" id="close-map-btn" style="background: #555; color: white;">返回</button>
+        </div>
+
+        <div id="gacha-modal" class="modal">
+            <h1 style="color: #ff5500; text-shadow: 0 0 10px #ff5500; margin-bottom: 10px;">🎁 抽獎補給中心</h1>
+            <h2 id="gacha-gold-display" style="color: gold; margin-top: 0; margin-bottom: 10px;">💰 0</h2>
+            
+            <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #555; width: 600px; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 15px; overflow:hidden;">
+                <div id="gacha-result" style="width: 100%; text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #fff;">選擇你要抽取的物資箱！</div>
+                    <div style="font-size: 14px; color: #aaa; margin-top: 10px;">裝備提供基礎屬性，戰寵會跟隨你自動戰鬥與吸寶</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 30px; margin-bottom: 10px;">
+                <div style="background: #222; padding: 10px; border-radius: 8px; border: 1px solid #777;">
+                    <div style="color:#00ffff; font-weight:bold; margin-bottom:5px;">一般裝備箱</div>
+                    <button class="action-btn" onclick="executeGacha(1, 'equip')" style="background: #0088ff; color:white; font-size:16px; padding: 8px 15px;">單抽 (💰 50)</button>
+                    <button class="action-btn" onclick="executeGacha(10, 'equip')" style="background: #0055cc; color:white; font-size:16px; padding: 8px 15px;">十連 (💰 500)</button>
+                </div>
+                
+                <div style="background: #222; padding: 10px; border-radius: 8px; border: 1px solid #ffaa00;">
+                    <div style="color:#ffcc00; font-weight:bold; margin-bottom:5px;">🤖 戰寵 / 無人機箱</div>
+                    <button class="action-btn" onclick="executeGacha(1, 'pet')" style="background: #ff8800; color:white; font-size:16px; padding: 8px 15px;">單抽 (💰 100)</button>
+                    <button class="action-btn" onclick="executeGacha(10, 'pet')" style="background: #cc4400; color:white; font-size:16px; padding: 8px 15px;">十連 (💰 1000)</button>
+                </div>
+            </div>
+            <button class="action-btn" id="close-gacha-btn" style="background: #555; color: white; font-size: 16px; padding: 8px 20px;">返回主選單</button>
+        </div>
+
+        <div id="equip-modal" class="modal">
+            <h1 style="color: #b266ff; text-shadow: 0 0 10px #b266ff; margin: 0 0 5px 0;">🎒 裝備庫</h1>
+            <h3 id="equip-gold-display" style="color: gold; margin: 0 0 10px 0;">💰 0</h3>
+            <div style="color: #00ffff; margin-bottom: 10px; font-size: 14px;">點擊右側庫存裝備來穿上，點擊左側欄位可卸下裝備。<br>點擊「升級」會消耗同等級的相同裝備進行強化。</div>
+            
+            <div style="display: flex; gap: 15px; height: 65%; width: 95%; margin: 0 auto;">
+                <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px solid #555; box-sizing: border-box; width: 120px; flex-shrink: 0; gap: 8px;">
+                    <div id="slot-weapon" class="equip-slot" onclick="unequipItem('weapon')"><span style="color:#777;">武器</span></div>
+                    <div id="slot-armor" class="equip-slot" onclick="unequipItem('armor')"><span style="color:#777;">防具</span></div>
+                    <div id="slot-accessory" class="equip-slot" onclick="unequipItem('accessory')"><span style="color:#777;">飾品</span></div>
+                    <div id="slot-pet" class="equip-slot" onclick="unequipItem('pet')" style="border-color: #ffaa00;"><span style="color:#ffaa00;">戰寵</span></div>
+                </div>
+                
+                <div class="shop-panel" style="flex: 1; width: auto; height: 100%; max-height: none; margin: 0; box-sizing: border-box; overflow-y: auto; padding: 10px;">
+                    <div id="inventory-grid" class="equip-grid"></div>
+                </div>
+            </div>
+            
+            <button class="action-btn" id="close-equip-btn" style="background: #555; color: white; margin-top: 15px; padding: 8px 30px;">返回主選單</button>
+        </div>
+
+        <div id="chest-modal" class="modal">
+            <h1 style="color: #ffd700; text-shadow: 0 0 20px #ffd700; font-size: 48px; margin-bottom: 10px;">🎁 菁英寶箱</h1>
+            <p style="color: #ddd; font-size: 18px; margin-top: 0;">抽取隨機獎勵中...</p>
+            <div id="chest-slots" style="display: flex; gap: 20px; margin: 30px 0; min-height: 160px; align-items: center; justify-content: center;">
+                </div>
+            <button class="action-btn" id="chest-ok-btn" style="display:none; padding: 12px 50px;" onclick="closeChestModal()">繼續戰鬥</button>
+        </div>
+
+        <div id="level-up-modal" class="modal">
+            <h1 style="color: #00ffff; text-shadow: 0 0 10px #00ffff;">升級了！選擇技能</h1>
+            <div id="skill-choices"></div>
+        </div>
+
+        <div id="end-modal" class="modal">
+            <h1 id="end-title" style="font-size: 48px; margin-bottom: 5px;"></h1>
+            <p id="end-stats" style="font-size: 20px; color: white; margin-bottom: 10px; margin-top: 0;"></p>
+            <div id="end-damage-chart" style="margin-bottom: 20px;"></div>
+            <button class="action-btn" onclick="location.reload()">返回主選單</button>
+        </div>
+
+        <div id="pause-modal" class="modal">
+            <h1 style="color: #ffcc00; text-shadow: 0 0 10px #ffcc00; margin-bottom: 15px;">⏸️ 遊戲暫停</h1>
+            
+            <div style="display: flex; gap: 20px; align-items: stretch; max-width: 900px;">
+                <div style="background: rgba(20,20,20,0.95); padding: 15px; border: 2px solid #00ffff; border-radius: 10px; width: 280px; text-align: left; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);">
+                    <h2 style="color: #00ffff; margin-top: 0; font-size: 20px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 10px; margin-bottom: 15px;">📊 詳細戰鬥屬性</h2>
+                    <div id="pause-stats-list" style="font-size: 16px; color: #ddd; line-height: 1.8;">
+                        </div>
+                </div>
+
+                <div style="background: rgba(34,34,34,0.95); padding: 15px; border: 2px solid #555; border-radius: 10px; width: 500px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);">
+                    <h2 style="color: white; margin-top: 0; font-size: 20px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 10px; margin-bottom: 15px;">🌟 目前擁有技能</h2>
+                    <div id="pause-skills-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                        </div>
+                </div>
+            </div>
+            
+            <button class="action-btn" id="resume-btn" style="margin-top: 25px;">繼續遊戲</button>
+        </div>
+    </div>
+
+    <script>
+        // 若瀏覽器禁止本機儲存（如部分 App 內建瀏覽器 / 無痕模式），改用記憶體暫存避免遊戲無法啟動
+        (function(){ try { window.localStorage.setItem("__t","1"); window.localStorage.removeItem("__t"); } catch (e) {
+            const mem = {}; const fake = { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; }, clear: () => { for (const k in mem) delete mem[k]; } };
+            try { Object.defineProperty(window, "localStorage", { value: fake, configurable: true }); } catch (e2) {}
+        } })();
+    </script>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const statusText = document.getElementById("status");
+        const xpBar = document.getElementById("xp-bar");
+        const ultBar = document.getElementById("ult-bar");
+        const ultText = document.getElementById("ult-text");
+        const dashBar = document.getElementById("dash-bar");
+        const dashText = document.getElementById("dash-text");
+        
+        const modals = { 
+            main: document.getElementById("main-menu"), 
+            mapSelect: document.getElementById("map-select-modal"),
+            gacha: document.getElementById("gacha-modal"), 
+            equip: document.getElementById("equip-modal"),
+            level: document.getElementById("level-up-modal"), 
+            chest: document.getElementById("chest-modal"),
+            end: document.getElementById("end-modal"), 
+            pause: document.getElementById("pause-modal"),
+            achievement: document.getElementById("achievement-modal")
+        };
+        const skillChoicesDiv = document.getElementById("skill-choices");
+
+        let lastTime = 0; const CELL_SIZE = 100; let trails = []; 
+        let gameState = "MENU"; 
+        const WORLD = { width: 2400, height: 1800 }; 
+        let camera = { x: 0, y: 0 };
+        let currentMap = "plains"; 
+
+        let player, petEntity, bullets, enemyBullets, zombies, drops, floatingTexts, obstacles, explosions, quicksands, petLasers, enemyExplosions;
+        let score = 0, level = 1, currentXp = 0, xpNeeded = 10, gameSeconds = 0, dangerLevel = 0, sessionGold = 0;
+        let bossActive = false, bossDefeated = false; 
+        let ultEnergy = 0; const MAX_ULT_ENERGY = 100;
+        let shootCooldown = 0; let SHOOT_INTERVAL = 15; let targetZombie = null;
+
+        let thrownWeapons = [], firePools = [], lightningEffects = [], toxicBombs = [], acidPools = [];
+        let molotovCooldown = 0, lightningCooldown = 0;
+        let damageStats = { shoot: 0, explosion: 0, orbital: 0, aura: 0, ult: 0, molotov: 0, lightning: 0, pet: 0 };
+
+        function generateUID() { return Date.now().toString(36) + Math.random().toString(36).substring(2, 6); }
+
+        let savedGold = parseInt(localStorage.getItem('zombie_gold')) || 0;
+        let equipped = JSON.parse(localStorage.getItem('zombie_equipped_v4')) || { weapon: null, armor: null, accessory: null, pet: null };
+        let inventory = JSON.parse(localStorage.getItem('zombie_inventory_v5')) || [];
+        let unlockedMaps = JSON.parse(localStorage.getItem('zombie_unlocked_maps')) || ['plains'];
+        
+        let achievements = JSON.parse(localStorage.getItem('zombie_achievements_v1')) || {
+            'survive_5m': { unlocked: false, claimed: false },
+            'kill_1000': { unlocked: false, claimed: false },
+            'equip_lv5': { unlocked: false, claimed: false }
+        };
+
+        const EQUIPMENT_DB = [
+            { id: 'w_n1', name: '🔪 舊短刀', type: 'weapon', rarity: 'N', hp: 0, damage: 0.3, speed: 0, desc: '攻擊' },
+            { id: 'w_r1', name: '⚔️ 精鋼劍', type: 'weapon', rarity: 'R', hp: 0, damage: 0.8, speed: 0, desc: '攻擊' },
+            { id: 'w_sr1', name: '🗡️ 能量光刃', type: 'weapon', rarity: 'SR', hp: 0, damage: 2.0, speed: 0, desc: '攻擊' },
+            { id: 'a_n1', name: '👕 舊皮衣', type: 'armor', rarity: 'N', hp: 20, damage: 0, speed: 0, desc: '血量' },
+            { id: 'a_r1', name: '🦺 戰術背心', type: 'armor', rarity: 'R', hp: 50, damage: 0, speed: 0, desc: '血量' },
+            { id: 'a_sr1', name: '🤖 奈米裝甲', type: 'armor', rarity: 'SR', hp: 120, damage: 0, speed: 0, desc: '血量' },
+            { id: 's_n1', name: '👟 運動鞋', type: 'accessory', rarity: 'N', hp: 0, damage: 0, speed: 0.2, desc: '跑速' },
+            { id: 's_r1', name: '🥾 軍用皮靴', type: 'accessory', rarity: 'R', hp: 0, damage: 0, speed: 0.5, desc: '跑速' },
+            { id: 's_sr1', name: '🚀 推進短靴', type: 'accessory', rarity: 'SR', hp: 0, damage: 0, speed: 1.2, desc: '跑速' },
+            { id: 'p_n1', name: '🐶 機械小狗', type: 'pet', rarity: 'N', isPet: true, action: 'collect', radiusBase: 50, radiusGrowth: 5, desc: '自動磁鐵' },
+            { id: 'p_r1', name: '🛸 突擊無人機', type: 'pet', rarity: 'R', isPet: true, action: 'attack', dmgBase: 0.5, dmgGrowth: 0.2, cooldown: 2.5, desc: '雷射射擊' },
+            { id: 'p_sr1', name: '🐉 裝甲飛龍', type: 'pet', rarity: 'SR', isPet: true, action: 'both', radiusBase: 70, radiusGrowth: 10, dmgBase: 1.0, dmgGrowth: 0.3, cooldown: 2.0, desc: '全能神寵' },
+            { id: 'p_ex1', name: '🧚 聖光精靈', type: 'pet', rarity: 'SR', isPet: true, isExclusive: true, action: 'both', radiusBase: 120, radiusGrowth: 15, dmgBase: 2.5, dmgGrowth: 0.5, cooldown: 1.0, desc: '成就限定！極速火力與大範圍拾取' }
+        ];
+
+        const ACHIEVEMENT_DB = [
+            { id: 'survive_5m', title: '⏱️ 生存達人', desc: '在任一地圖單局存活超過 5 分鐘', rewardType: 'gold', rewardValue: 2000 },
+            { id: 'kill_1000', title: '🩸 屠殺者', desc: '單局擊殺超過 1000 隻殭屍', rewardType: 'gold', rewardValue: 3000 },
+            { id: 'equip_lv5', title: '⚒️ 鍛造大師', desc: '將任一裝備升級至 Lv.5', rewardType: 'pet', rewardValue: 'p_ex1', rewardDesc: '專屬神寵：聖光精靈' }
+        ];
+
+        const SKILL_POOL = [
+            { id: "speed", name: "👟 跑鞋", desc: "移動速度增加", level: 0, maxLevel: 5, apply: () => player.speed += 0.5 },
+            { id: "fireRate", name: "🔫 快槍手", desc: "射擊間隔縮短", level: 0, maxLevel: 5, apply: () => SHOOT_INTERVAL = Math.max(3, SHOOT_INTERVAL - 2.5) },
+            { id: "multiShot", name: "💥 散彈槍", desc: "發射子彈數 +1 (滿級可合成)", level: 0, maxLevel: 4, apply: () => player.multiShot += 1 },
+            { id: "pierce", name: "🏹 穿透彈", desc: "子彈貫穿敵人數 +1", level: 0, maxLevel: 3, apply: () => player.basePierce += 1 },
+            { id: "damage", name: "⚔️ 威力提升", desc: "子彈傷害增加", level: 0, maxLevel: 5, apply: () => player.damage += 1 },
+            { id: "magnet", name: "🧲 磁鐵", desc: "寶石吸收範圍擴大", level: 0, maxLevel: 4, apply: () => player.pickupRadius += 80 },
+            { id: "orbitals", name: "💫 護體法球", desc: "召喚高傷害環繞法球", level: 0, maxLevel: 4, apply: () => player.orbitals += 1 },
+            { id: "shield", name: "🛡️ 能量護盾", desc: "獲得可自動回復的護盾", level: 0, maxLevel: 5, apply: () => { player.maxShield += 25; player.shieldRegen += 0.05; } },
+            { id: "molotov", name: "🔥 燃燒瓶", desc: "投擲燃燒瓶產生持續傷害火圈", level: 0, maxLevel: 5, apply: () => player.molotovLevel += 1 },
+            { id: "lightning", name: "⚡ 閃電鏈", desc: "釋放在敵人之間彈跳的閃電", level: 0, maxLevel: 5, apply: () => player.lightningLevel += 1 }
+        ];
+
+        const EVOLUTIONS = [
+            { id: "evo_explosive", reqWeapon: "multiShot", reqPassive: "damage", name: "✨ [超級進化] 爆裂彈", desc: "散彈槍終極進化！命中時產生大範圍毀滅爆炸！", applied: false, apply: () => { player.isEvolvedShot = true; } }
+        ];
+
+        const FALLBACK_SKILL = { id: "heal", name: "💖 急救包", desc: "立刻恢復 50 點血量", level: 0, maxLevel: null, apply: () => player.hp = Math.min(player.maxHp, player.hp + 50) };
+
+        function saveBaseData() {
+            localStorage.setItem('zombie_gold', savedGold);
+            localStorage.setItem('zombie_inventory_v5', JSON.stringify(inventory));
+            localStorage.setItem('zombie_equipped_v4', JSON.stringify(equipped));
+            localStorage.setItem('zombie_unlocked_maps', JSON.stringify(unlockedMaps));
+            localStorage.setItem('zombie_achievements_v1', JSON.stringify(achievements));
+        }
+
+        // --- 成就系統邏輯 ---
+        document.getElementById("open-achievement-btn").addEventListener("click", () => {
+            renderAchievements();
+            modals.main.style.display = "none";
+            modals.achievement.style.display = "flex";
+        });
+        document.getElementById("close-achievement-btn").addEventListener("click", () => {
+            modals.achievement.style.display = "none";
+            modals.main.style.display = "flex";
+        });
+
+        function renderAchievements() {
+            let listDiv = document.getElementById("achievement-list");
+            listDiv.innerHTML = "";
+            
+            ACHIEVEMENT_DB.forEach(ach => {
+                if (!achievements[ach.id]) achievements[ach.id] = { unlocked: false, claimed: false };
+                
+                let state = achievements[ach.id];
+                let isUnlocked = state.unlocked;
+                let isClaimed = state.claimed;
+                
+                let btnHTML = "";
+                if (isClaimed) {
+                    btnHTML = `<button class="action-btn" disabled style="background:#333; color:#777; margin:0; padding: 10px 20px; box-shadow:none;">已領取</button>`;
+                } else if (isUnlocked) {
+                    btnHTML = `<button class="action-btn" style="background:#00ffcc; color:#000; margin:0; padding: 10px 20px;" onclick="claimAchievement('${ach.id}')">🎁 領取獎勵</button>`;
+                } else {
+                    btnHTML = `<button class="action-btn" disabled style="background:#555; color:#aaa; margin:0; padding: 10px 20px; box-shadow:none;">未達成</button>`;
+                }
+
+                let rewardText = ach.rewardType === 'gold' ? `💰 ${ach.rewardValue} 金幣` : `🎁 ${ach.rewardDesc}`;
+                let borderColor = isClaimed ? '#444' : (isUnlocked ? '#00ffcc' : '#555');
+                
+                let itemHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid ${borderColor};">
+                        <div style="text-align: left;">
+                            <div style="font-weight: bold; color: ${isClaimed ? '#888' : (isUnlocked ? '#00ffcc' : '#fff')}; font-size: 20px; margin-bottom: 5px;">${ach.title}</div>
+                            <div style="font-size: 14px; color: #aaa; margin-bottom: 5px;">${ach.desc}</div>
+                            <div style="font-size: 14px; color: #ffd700; font-weight: bold;">獎勵: ${rewardText}</div>
+                        </div>
+                        <div>${btnHTML}</div>
+                    </div>
+                `;
+                listDiv.innerHTML += itemHTML;
+            });
+        }
+
+        window.claimAchievement = function(id) {
+            let ach = ACHIEVEMENT_DB.find(a => a.id === id);
+            if (!ach || !achievements[id] || !achievements[id].unlocked || achievements[id].claimed) return;
+            
+            if (ach.rewardType === 'gold') {
+                savedGold += ach.rewardValue;
+                alert(`🎉 恭喜達成成就！\n獲得 💰 ${ach.rewardValue} 金幣！`);
+            } else if (ach.rewardType === 'pet') {
+                let itemMeta = EQUIPMENT_DB.find(e => e.id === ach.rewardValue);
+                let newItem = { uid: generateUID(), id: ach.rewardValue, level: 1 };
+                inventory.push(newItem);
+                alert(`🎉 恭喜達成成就！\n獲得成就專屬戰寵：【${itemMeta.name}】！\n(已放入您的裝備庫)`);
+            }
+            
+            achievements[id].claimed = true;
+            saveBaseData();
+            renderAchievements(); 
+        }
+
+        // --- 抽獎與裝備系統 ---
+        function openGacha() {
+            document.getElementById("gacha-gold-display").innerText = `💰 ${savedGold}`;
+            document.getElementById("gacha-result").innerHTML = `
+                <div style="font-size: 24px; font-weight: bold; color: #fff;">選擇你要抽取的物資箱！</div>
+                <div style="font-size: 14px; color: #aaa; margin-top: 10px;">裝備提供基礎屬性，戰寵會跟隨你自動戰鬥與吸寶</div>`;
+            modals.main.style.display = "none"; modals.gacha.style.display = "flex";
+        }
+        
+        function executeGacha(times, poolType) {
+            let costPerPull = poolType === 'pet' ? 100 : 50;
+            let cost = times * costPerPull;
+            if (savedGold < cost) return;
+            savedGold -= cost;
+            
+            let resultDiv = document.getElementById("gacha-result");
+            let pulledItems = [];
+
+            for(let i = 0; i < times; i++) {
+                let roll = Math.random();
+                let rarity = roll < 0.10 ? 'SR' : (roll < 0.35 ? 'R' : 'N'); 
+                
+                let pool = EQUIPMENT_DB.filter(i => !i.isExclusive && i.rarity === rarity && (poolType === 'pet' ? i.type === 'pet' : i.type !== 'pet'));
+                let item = pool[Math.floor(Math.random() * pool.length)];
+                let color = rarity === 'SR' ? '#b266ff' : (rarity === 'R' ? '#00aaff' : '#aaa');
+                
+                let newItem = { uid: generateUID(), id: item.id, level: 1 };
+                inventory.push(newItem);
+                pulledItems.push({ item: item, color: color, uid: newItem.uid });
+            }
+            
+            if (times === 1) {
+                let p = pulledItems[0];
+                resultDiv.innerHTML = `🎉 <span style="color:${p.color}; text-shadow: 0 0 10px ${p.color};">獲得：${p.item.name}！</span> 🎉<br><span style="color:#ccc; font-size:14px; margin-top:5px; display:inline-block;">(已放入裝備庫)</span>`;
+            } else {
+                let gridHTML = `<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; height: 100%; align-items: center;">`;
+                pulledItems.forEach(p => {
+                    gridHTML += `
+                    <div style="background: #222; border: 2px solid ${p.color}; border-radius: 8px; padding: 10px 5px; width: 18%; font-size: 14px; box-sizing: border-box;">
+                        <span style="color:${p.color}; font-weight: bold;">${p.item.name.split(' ')[0]}</span><br>
+                        <span style="color:${p.color}; font-size:12px;">${p.item.name.split(' ')[1]}</span><br>
+                        <span style="font-size: 11px; font-weight: bold; color: #00ffcc; margin-top: 5px; display: inline-block;">NEW!</span>
+                    </div>`;
+                });
+                gridHTML += `</div>`;
+                resultDiv.innerHTML = gridHTML;
+            }
+
+            saveBaseData();
+            document.getElementById("gacha-gold-display").innerText = `💰 ${savedGold}`;
+        }
+
+        function openEquip() { renderEquip(); modals.main.style.display = "none"; modals.equip.style.display = "flex"; }
+        
+        function renderEquip() {
+            document.getElementById("equip-gold-display").innerText = `💰 ${savedGold}`;
+
+            ['weapon', 'armor', 'accessory', 'pet'].forEach(type => {
+                let slot = document.getElementById(`slot-${type}`);
+                let eqUid = equipped[type];
+                let invItem = inventory.find(i => i.uid === eqUid);
+                let itemMeta = invItem ? EQUIPMENT_DB.find(i => i.id === invItem.id) : null;
+                
+                if (invItem && itemMeta) {
+                    slot.className = `equip-slot filled rarity-${itemMeta.rarity}`;
+                    slot.innerHTML = `<div style="position:absolute; top:4px; left:4px; font-size:10px; color:#0ff;">Lv.${invItem.level}</div><span style="font-size:20px;">${itemMeta.name.split(' ')[0]}</span><span style="font-size:12px; margin-top:4px;">${itemMeta.name.split(' ')[1]}</span>`;
+                } else {
+                    let typeName = type === 'weapon' ? '武器' : (type === 'armor' ? '防具' : (type === 'accessory' ? '飾品' : '戰寵'));
+                    let color = type === 'pet' ? '#ffaa00' : '#777';
+                    slot.className = `equip-slot`; slot.style.borderColor = type === 'pet' ? '#ffaa00' : '#777';
+                    slot.innerHTML = `<span style="color:${color};">${typeName}</span>`;
+                }
+            });
+
+            let grid = document.getElementById("inventory-grid"); grid.innerHTML = "";
+            if (inventory.length === 0) { grid.innerHTML = "<p style='color:#777;'>你還沒有任何裝備，快去抽獎中心試試手氣吧！</p>"; return; }
+            
+            let sortedInventory = [...inventory].sort((a, b) => {
+                let metaA = EQUIPMENT_DB.find(i => i.id === a.id);
+                let metaB = EQUIPMENT_DB.find(i => i.id === b.id);
+                let rScore = { 'SR': 3, 'R': 2, 'N': 1 };
+                if (metaA.type !== metaB.type) return metaA.type === 'pet' ? 1 : -1; 
+                if (rScore[metaB.rarity] !== rScore[metaA.rarity]) return rScore[metaB.rarity] - rScore[metaA.rarity];
+                if (a.id !== b.id) return a.id.localeCompare(b.id);
+                return b.level - a.level;
+            });
+            
+            sortedInventory.forEach(invItem => {
+                let itemMeta = EQUIPMENT_DB.find(i => i.id === invItem.id);
+                if(!itemMeta) return;
+
+                let isEquipped = equipped[itemMeta.type] === invItem.uid;
+                let hasSameLevelDuplicate = inventory.some(i => i.id === invItem.id && i.uid !== invItem.uid && i.level === invItem.level);
+                
+                let statText = "";
+                if (itemMeta.isPet) {
+                    if (itemMeta.action === 'collect') statText = `吸寶+${itemMeta.radiusBase + invItem.level * itemMeta.radiusGrowth}`;
+                    else if (itemMeta.action === 'attack') statText = `雷射 ${(itemMeta.dmgBase + invItem.level * itemMeta.dmgGrowth).toFixed(1)}`;
+                    else statText = `吸寶/雷射 UP`;
+                } else {
+                    statText = itemMeta.hp > 0 ? `+${itemMeta.hp * invItem.level}` : (itemMeta.damage > 0 ? `+${(itemMeta.damage * invItem.level).toFixed(1)}` : `+${(itemMeta.speed * invItem.level).toFixed(1)}`);
+                }
+                
+                let div = document.createElement("div"); div.className = `equip-item rarity-${itemMeta.rarity}`;
+                div.innerHTML = `
+                    <div class="equip-card-content" onclick="equipItem('${invItem.uid}')">
+                        <div style="position:absolute; top:4px; left:4px; font-size:11px; color:#0ff; font-weight:bold;">Lv.${invItem.level}</div>
+                        ${isEquipped ? '<div style="position:absolute; top:20px; right:2px; background:#0f0; color:#000; font-size:9px; padding:2px 3px; border-radius:3px; font-weight:bold;">裝備中</div>' : ''}
+                        
+                        <span style="font-size:24px; margin-top:5px;">${itemMeta.name.split(' ')[0]}</span>
+                        <span style="font-size:12px; margin-top:4px; font-weight:bold; color: #fff;">${itemMeta.name.split(' ')[1]}</span>
+                        <span style="font-size:11px; color:#aaa; margin-top:4px;">${itemMeta.desc} ${statText}</span>
+                    </div>
+                    <div class="equip-btn-group">
+                        <button class="eq-btn" onclick="upgradeItem('${invItem.uid}', event)" ${hasSameLevelDuplicate ? '' : 'disabled'}>升級</button>
+                        <button class="eq-btn sell" onclick="sellItem('${invItem.uid}', event)">賣出</button>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+        
+        function equipItem(uid) { 
+            let invItem = inventory.find(i => i.uid === uid);
+            if(invItem) {
+                let itemMeta = EQUIPMENT_DB.find(i => i.id === invItem.id);
+                if(itemMeta) { equipped[itemMeta.type] = uid; saveBaseData(); renderEquip(); }
+            }
+        }
+        
+        function unequipItem(type) { equipped[type] = null; saveBaseData(); renderEquip(); }
+
+        function upgradeItem(uid, event) {
+            event.stopPropagation();
+            let targetIdx = inventory.findIndex(i => i.uid === uid);
+            if (targetIdx === -1) return;
+            let targetItem = inventory[targetIdx];
+
+            let actualDupIdx = inventory.findIndex(i => i.id === targetItem.id && i.level === targetItem.level && i.uid !== uid);
+            
+            if (actualDupIdx !== -1) {
+                let duplicateUid = inventory[actualDupIdx].uid;
+                for (let type in equipped) {
+                    if (equipped[type] === duplicateUid) equipped[type] = null;
+                }
+                inventory.splice(actualDupIdx, 1);
+                let finalTarget = inventory.find(i => i.uid === uid);
+                finalTarget.level += 1;
+                
+                if (finalTarget.level >= 5) {
+                    if (!achievements['equip_lv5']) achievements['equip_lv5'] = { unlocked: false, claimed: false };
+                    achievements['equip_lv5'].unlocked = true;
+                }
+                
+                saveBaseData(); renderEquip();
+            }
+        }
+
+        function sellItem(uid, event) {
+            event.stopPropagation();
+            let idx = inventory.findIndex(i => i.uid === uid);
+            if (idx !== -1) {
+                let invItem = inventory[idx];
+                let itemMeta = EQUIPMENT_DB.find(i => i.id === invItem.id);
+                let basePrice = itemMeta.isPet ? (itemMeta.rarity === 'SR' ? 60 : (itemMeta.rarity === 'R' ? 30 : 10)) : (itemMeta.rarity === 'SR' ? 30 : (itemMeta.rarity === 'R' ? 15 : 5));
+                let refund = basePrice * invItem.level; 
+                
+                if (confirm(`確定要賣出 [Lv.${invItem.level} ${itemMeta.name}] 獲得 ${refund} 金幣嗎？`)) {
+                    if (equipped[itemMeta.type] === uid) equipped[itemMeta.type] = null;
+                    inventory.splice(idx, 1);
+                    savedGold += refund;
+                    saveBaseData(); renderEquip();
+                }
+            }
+        }
+
+        function openMapSelect() {
+            const desertBtn = document.getElementById("start-desert-btn");
+            const caveBtn = document.getElementById("start-cave-btn");
+            const desertLock = document.getElementById("desert-lock");
+            const caveLock = document.getElementById("cave-lock");
+
+            if (unlockedMaps.includes("desert")) {
+                desertBtn.style.opacity = "1"; desertLock.style.display = "none";
+            } else {
+                desertBtn.style.opacity = "0.6"; desertLock.style.display = "flex";
+            }
+
+            if (unlockedMaps.includes("cave")) {
+                caveBtn.style.opacity = "1"; caveLock.style.display = "none";
+            } else {
+                caveBtn.style.opacity = "0.6"; caveLock.style.display = "flex";
+            }
+
+            modals.main.style.display = "none"; modals.mapSelect.style.display = "flex";
+        }
+
+        document.getElementById("open-gacha-btn").addEventListener("click", openGacha);
+        document.getElementById("close-gacha-btn").addEventListener("click", () => { modals.gacha.style.display = "none"; modals.main.style.display = "flex"; });
+        
+        document.getElementById("open-equip-btn").addEventListener("click", openEquip);
+        document.getElementById("close-equip-btn").addEventListener("click", () => { modals.equip.style.display = "none"; modals.main.style.display = "flex"; });
+        
+        document.getElementById("start-btn").addEventListener("click", openMapSelect);
+        document.getElementById("close-map-btn").addEventListener("click", () => { modals.mapSelect.style.display = "none"; modals.main.style.display = "flex"; });
+        
+        document.getElementById("start-plains-btn").addEventListener("click", () => { 
+            currentMap = "plains"; initGame(); modals.mapSelect.style.display = "none"; gameState = "PLAYING"; updateUI(); 
+        });
+        document.getElementById("start-desert-btn").addEventListener("click", () => { 
+            if (!unlockedMaps.includes("desert")) { alert("🔒 此地圖尚未開放！請先通關【🌲 平原地圖】擊敗 BOSS。"); return; }
+            currentMap = "desert"; initGame(); modals.mapSelect.style.display = "none"; gameState = "PLAYING"; updateUI(); 
+        });
+        document.getElementById("start-cave-btn").addEventListener("click", () => { 
+            if (!unlockedMaps.includes("cave")) { alert("🔒 此地圖尚未開放！請先通關【🏜️ 荒漠地圖】擊敗 BOSS。"); return; }
+            currentMap = "cave"; initGame(); modals.mapSelect.style.display = "none"; gameState = "PLAYING"; updateUI(); 
+        });
+
+        function togglePause() {
+            if (gameState !== "PLAYING" && gameState !== "PAUSED") return; 
+            if (gameState === "PLAYING") { gameState = "PAUSED"; renderPauseMenu(); modals.pause.style.display = "flex"; } 
+            else if (gameState === "PAUSED") { gameState = "PLAYING"; modals.pause.style.display = "none"; }
+        }
+        
+        function renderPauseMenu() {
+            const statsList = document.getElementById("pause-stats-list");
+            let speedBonus = Math.round((player.speed / 4) * 100) - 100; 
+            let fireRate = (60 / SHOOT_INTERVAL).toFixed(1);
+            let petDmgText = petEntity ? (petEntity.action === 'collect' ? "無 (純輔助)" : petEntity.damage.toFixed(1)) : "未裝備戰寵";
+
+            statsList.innerHTML = `
+                <div style="display:flex; justify-content:space-between;"><span>⚔️ 總攻擊力:</span> <strong style="color:#ff5500;">${player.damage.toFixed(1)}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>👟 跑速加成:</span> <strong style="color:#00ffcc;">+${speedBonus}%</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>🔫 武器射速:</span> <strong style="color:#ffff00;">${fireRate} 發/秒</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>🏹 射擊特性:</span> <strong style="color:#aaa;">${player.multiShot}發 / ${player.basePierce}穿透</strong></div>
+                <hr style="border:0; border-top:1px dashed #555; margin:8px 0;">
+                <div style="display:flex; justify-content:space-between;"><span>💖 最大血量:</span> <strong style="color:#00ff00;">${player.maxHp}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>🛡️ 護盾容量:</span> <strong style="color:#00aaff;">${player.maxShield > 0 ? player.maxShield : "無"}</strong></div>
+                <hr style="border:0; border-top:1px dashed #555; margin:8px 0;">
+                <div style="display:flex; justify-content:space-between;"><span>🤖 戰寵傷害:</span> <strong style="color:#ffaa00;">${petDmgText}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>🧲 拾取範圍:</span> <strong style="color:#b266ff;">${player.pickupRadius}</strong></div>
+            `;
+
+            const listDiv = document.getElementById("pause-skills-list"); 
+            listDiv.innerHTML = "";
+            let acquiredSkills = SKILL_POOL.filter(s => s.level > 0); 
+            let acquiredEvos = EVOLUTIONS.filter(e => e.applied);
+            
+            if (acquiredSkills.length === 0 && acquiredEvos.length === 0) { 
+                listDiv.innerHTML = "<p style='color: #aaa; width: 100%; text-align: center; font-size: 18px;'>目前尚未獲得任何技能</p>"; 
+                return; 
+            }
+            
+            acquiredEvos.forEach(evo => {
+                let item = document.createElement("div"); 
+                item.style.cssText = "background: #332b00; border: 2px solid #ffd700; padding: 10px; border-radius: 8px; width: 45%; box-sizing: border-box; text-align: center; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);";
+                item.innerHTML = `<strong style="color:#ffd700; font-size: 16px;">${evo.name}</strong><br><span style="font-size:14px; color:#ddd;">MAX</span>`; 
+                listDiv.appendChild(item);
+            });
+            
+            acquiredSkills.forEach(skill => {
+                let item = document.createElement("div"); 
+                let isMax = skill.level >= skill.maxLevel;
+                item.style.cssText = `background: #222; border: 2px solid ${isMax ? '#00ffcc' : '#555'}; padding: 10px; border-radius: 8px; width: 45%; box-sizing: border-box; text-align: center;`;
+                item.innerHTML = `<strong style="color:#00ffff; font-size: 16px;">${skill.name}</strong><br><span style="font-size:14px; color:${isMax ? '#00ffcc' : '#aaa'};">Lv. ${skill.level} ${isMax ? '(MAX)' : ` / ${skill.maxLevel}`}</span>`; 
+                listDiv.appendChild(item);
+            });
+        }
+        document.getElementById("resume-btn").addEventListener("click", togglePause);
+
+        // --- 遊戲核心邏輯 ---
+        function initGame() {
+            document.getElementById("boss-hp-container").style.display = "none";
+            let eqHp = 0, eqDmg = 0, eqSpd = 0;
+            petEntity = null;
+
+            ['weapon', 'armor', 'accessory', 'pet'].forEach(type => {
+                let eqUid = equipped[type];
+                if (eqUid) {
+                    let invItem = inventory.find(i => i.uid === eqUid);
+                    if (invItem) {
+                        let itemMeta = EQUIPMENT_DB.find(i => i.id === invItem.id);
+                        if (itemMeta) { 
+                            if (!itemMeta.isPet) {
+                                eqHp += itemMeta.hp * invItem.level; eqDmg += itemMeta.damage * invItem.level; eqSpd += itemMeta.speed * invItem.level; 
+                            } else {
+                                petEntity = {
+                                    x: 1200, y: 900,
+                                    icon: itemMeta.name.split(' ')[0],
+                                    action: itemMeta.action,
+                                    radius: itemMeta.radiusBase ? itemMeta.radiusBase + invItem.level * itemMeta.radiusGrowth : 0,
+                                    damage: itemMeta.dmgBase ? itemMeta.dmgBase + invItem.level * itemMeta.dmgGrowth : 0,
+                                    cooldownMax: itemMeta.cooldown || 1,
+                                    cooldown: 0,
+                                    floatAngle: 0
+                                };
+                            }
+                        }
+                    }
+                }
+            });
+
+            player = { 
+                x: 1200, y: 900, radius: 15, color: "#00aaff", pickupRadius: 80,
+                orbitals: 0, orbitalAngle: 0, auraLevel: 0, multiShot: 1, basePierce: 1,
+                maxHp: 100 + eqHp,
+                speed: 4 + eqSpd,
+                damage: 1 + eqDmg,
+                maxShield: 0, shield: 0, shieldRegen: 0,
+                isEvolvedShot: false, molotovLevel: 0, lightningLevel: 0,
+                isDashing: false, isInvincible: false, dashCooldown: 0, dashCooldownMax: 3.0, dashTimer: 0, dashDuration: 0.2, dashSpeedMult: 3.5
+            };
+            player.hp = player.maxHp;
+            
+            bullets = []; enemyBullets = []; zombies = []; drops = []; floatingTexts = []; obstacles = []; explosions = []; trails = []; quicksands = []; petLasers = []; enemyExplosions = [];
+            thrownWeapons = []; firePools = []; lightningEffects = []; toxicBombs = []; acidPools = [];
+            molotovCooldown = 0; lightningCooldown = 0;
+            
+            score = 0; level = 1; currentXp = 0; sessionGold = 0; xpNeeded = 10; 
+            gameSeconds = 0; dangerLevel = 0; bossActive = false; bossDefeated = false;
+            ultEnergy = 0; updateUltUI();
+            damageStats = { shoot: 0, explosion: 0, orbital: 0, aura: 0, ult: 0, molotov: 0, lightning: 0, pet: 0 };
+            
+            dashBar.style.width = `100%`; dashBar.style.background = "#00ffcc"; dashText.innerText = "衝刺就緒";
+
+            let numObstacles = currentMap === "plains" ? 40 : (currentMap === "cave" ? 30 : 15);
+            let obsColor = currentMap === "plains" ? "#555" : (currentMap === "desert" ? "#5c4033" : "#333344");
+            for(let i=0; i<numObstacles; i++) {
+                let ox = Math.random() * (WORLD.width - 100) + 50; let oy = Math.random() * (WORLD.height - 100) + 50;
+                if (Math.hypot(ox - 1200, oy - 900) > 250) obstacles.push({ x: ox, y: oy, radius: Math.random() * 25 + 30, color: obsColor });
+            }
+
+            if (currentMap === "desert") {
+                for(let i=0; i<15; i++) {
+                    let qx = Math.random() * (WORLD.width - 200) + 100; let qy = Math.random() * (WORLD.height - 200) + 100;
+                    if (Math.hypot(qx - 1200, qy - 900) > 250) quicksands.push({ x: qx, y: qy, radius: Math.random() * 50 + 60 });
+                }
+            }
+            SKILL_POOL.forEach(s => s.level = 0); EVOLUTIONS.forEach(evo => evo.applied = false);
+        }
+
+        setInterval(() => {
+            if (gameState === "PLAYING") {
+                gameSeconds++; dangerLevel = Math.floor(gameSeconds / 15); updateUI();
+                if (gameSeconds % 20 === 0 && !bossActive) {
+                    let spawnX, spawnY; let isValid = false; let attempts = 0; const medkitRadius = 12;
+                    while (!isValid && attempts < 50) {
+                        spawnX = Math.random() * WORLD.width; spawnY = Math.random() * WORLD.height; isValid = true;
+                        for (let obs of obstacles) { if (Math.hypot(spawnX - obs.x, spawnY - obs.y) < medkitRadius + obs.radius) { isValid = false; break; } }
+                        attempts++;
+                    }
+                    if (isValid) drops.push({ x: spawnX, y: spawnY, radius: medkitRadius, type: "medkit" });
+                }
+            }
+        }, 1000);
+
+        setInterval(() => {
+            if (gameState !== "PLAYING") return;
+            if (dangerLevel >= 20 && !bossActive && !bossDefeated) {
+                bossActive = true;
+                let bossHp = 12000 + (level * 200);
+                zombies.push({ 
+                    x: WORLD.width / 2, y: -100, radius: 60, speed: 0.8, color: "#ff8800", 
+                    hp: bossHp, maxHp: bossHp, isElite: false, isBoss: true, type: "boss", 
+                    burnTimer: 0, burnTick: 0, 
+                    bossState: "chasing", bossSkillTimer: 5.0, stateTimer: 0, dashDx: 0, dashDy: 0 
+                }); 
+            }
+            if (zombies.length > (bossActive ? 150 : 300)) return;
+            
+            let baseSpawn = Math.floor(Math.random() * 3) + 2 + Math.floor(dangerLevel * 1.0);
+            let spawnCount = baseSpawn;
+
+            if (bossActive) {
+                if (currentMap === "plains") spawnCount = Math.max(1, Math.floor(baseSpawn * 0.15));
+                else spawnCount = Math.max(1, Math.floor(baseSpawn * 0.35));
+            }
+
+            for(let i=0; i<spawnCount; i++){
+                let angle = Math.random() * Math.PI * 2; let dist = 500 + Math.random() * 200;
+                let zx = Math.max(20, Math.min(WORLD.width - 20, player.x + Math.cos(angle) * dist)); let zy = Math.max(20, Math.min(WORLD.height - 20, player.y + Math.sin(angle) * dist));
+                
+                let typeRand = Math.random(); let zType = "normal"; let baseHp = 4 + Math.floor(dangerLevel * 2.5); let baseSpeed = 0.6 + Math.random() * 0.6 + (dangerLevel * 0.05); let baseColor = "#22cc22"; let radius = 14;
+
+                if (currentMap === "desert") baseColor = "#e9c46a"; else if (currentMap === "cave") baseColor = "#7a9e7e";
+
+                if (Math.random() < Math.min(0.04, dangerLevel * 0.003) && !bossActive) {
+                    zType = "elite"; baseHp = 50 + dangerLevel * 15; baseSpeed = 0.5 + Math.random() * 0.3; 
+                    baseColor = currentMap === "plains" ? "#cc0000" : (currentMap === "desert" ? "#c1121f" : "#990033"); radius = 25;
+                } else {
+                    if (currentMap === "desert" && dangerLevel >= 2 && typeRand > 0.8) { zType = "charger"; baseHp = 15 + dangerLevel * 4; baseSpeed = 0.7 + dangerLevel * 0.04; baseColor = "#d62828"; radius = 18; } 
+                    else if (currentMap === "cave" && dangerLevel >= 2 && typeRand > 0.8) { zType = "spitter"; baseHp = 10 + dangerLevel * 3; baseSpeed = 0.5 + dangerLevel * 0.02; baseColor = "#8800ff"; radius = 16; }
+                }
+                zombies.push({ x: zx, y: zy, radius: radius, speed: baseSpeed, color: baseColor, hp: baseHp, isElite: (zType === "elite"), isBoss: false, type: zType, burnTimer: 0, burnTick: 0, shootCooldown: Math.random() * 2, isDashing: false, dashTimer: 0, dashCooldown: 0, dashDx: 0, dashDy: 0 });
+            }
+        }, 800);
+
+        function formatTime(sec) { return `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`; }
+
+        let keys = {};
+        let joy = { active: false, x: 0, y: 0, id: null, ox: 0, oy: 0 };
+        window.addEventListener("keydown", (e) => {
+            keys[e.code] = true;
+            if (e.code === "Escape") togglePause();
+            if (e.code === "Space") triggerUlt();
+            if (e.code === "ShiftLeft" || e.code === "ShiftRight") triggerDash();
+        });
+        function triggerUlt() {
+            if (ultEnergy >= MAX_ULT_ENERGY && gameState === "PLAYING") {
+                ultEnergy = 0; updateUltUI();
+                const bulletCount = 24 + (level * 2); 
+                for (let i = 0; i < bulletCount; i++) {
+                    const angle = (i / bulletCount) * Math.PI * 2;
+                    bullets.push({ x: player.x, y: player.y, radius: 8, color: "#ff00ff", dx: Math.cos(angle) * 12, dy: Math.sin(angle) * 12, damage: player.damage * 4, pierce: Infinity, hitZombies: new Set(), isUlt: true });
+                }
+                canvas.style.borderColor = "#ff00ff"; setTimeout(() => canvas.style.borderColor = "#555", 200); flashUlt(); if (navigator.vibrate) navigator.vibrate([30,30,60]);
+            }
+        }
+        function triggerDash() {
+            if (gameState === "PLAYING") {
+                if (player.dashCooldown <= 0 && !player.isDashing) { player.isDashing = true; player.isInvincible = true; player.dashTimer = player.dashDuration; player.dashCooldown = player.dashCooldownMax; if (navigator.vibrate) navigator.vibrate(15); }
+            }
+        }
+        window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+        function updateUltUI() {
+            ultBar.style.width = `${(ultEnergy / MAX_ULT_ENERGY) * 100}%`;
+            ultText.innerText = ultEnergy >= MAX_ULT_ENERGY ? "大招就緒" : `充能 (${Math.floor((ultEnergy/MAX_ULT_ENERGY)*100)}%)`;
+            ultBar.style.background = ultEnergy >= MAX_ULT_ENERGY ? "linear-gradient(90deg, #ff00ff, #00ffff)" : "linear-gradient(90deg, #ff0055, #ffcc00)";
+        }
+
+        // --- 寶箱系統邏輯 ---
+        function getAvailableSkillsForChest() {
+            let pool = SKILL_POOL.filter(s => s.level < s.maxLevel);
+            EVOLUTIONS.forEach(evo => {
+                if (!evo.applied) {
+                    let wpn = SKILL_POOL.find(s => s.id === evo.reqWeapon); let pass = SKILL_POOL.find(s => s.id === evo.reqPassive);
+                    if (wpn && wpn.level >= wpn.maxLevel && pass && pass.level > 0) { 
+                        pool.push({ name: evo.name, desc: evo.desc, level: 0, maxLevel: 1, isEvo: true, apply: () => { evo.applied = true; evo.apply(); } }); 
+                    }
+                }
+            });
+            return pool.length > 0 ? pool : [FALLBACK_SKILL];
+        }
+
+        function openChestModal() {
+            gameState = "CHEST_ROULETTE";
+            modals.chest.style.display = "flex";
+            document.getElementById("chest-ok-btn").style.display = "none";
+            
+            let slotsContainer = document.getElementById("chest-slots");
+            slotsContainer.innerHTML = "";
+            
+            let roll = Math.random();
+            let numDrops = roll < 0.1 ? 3 : (roll < 0.4 ? 2 : 1);
+            
+            let slots = [];
+            for(let i=0; i<numDrops; i++) {
+                let div = document.createElement("div");
+                div.className = "chest-slot";
+                div.innerHTML = "❓<br><span style='font-size:14px;color:#aaa;margin-top:10px;'>抽取中...</span>";
+                slotsContainer.appendChild(div);
+                slots.push(div);
+            }
+
+            let ticks = 0;
+            let maxTicks = 15 + Math.floor(Math.random() * 10); 
+            let availableSkills = getAvailableSkillsForChest();
+            const goldPool = [10, 50, 100, 200, 500, 1000];
+            
+            let interval = setInterval(() => {
+                ticks++;
+                slots.forEach(slot => {
+                    if (Math.random() < 0.5 && availableSkills.length > 0) {
+                        let randomSkill = availableSkills[Math.floor(Math.random() * availableSkills.length)];
+                        slot.innerHTML = `<strong style="color:#ccc;">${randomSkill.name}</strong>`;
+                    } else {
+                        let randomGold = goldPool[Math.floor(Math.random() * goldPool.length)];
+                        slot.innerHTML = `<strong style="color:#ccc;">💰 ${randomGold} 金幣</strong>`;
+                    }
+                });
+                
+                if (ticks >= maxTicks) {
+                    clearInterval(interval);
+                    slots.forEach((slot) => {
+                        availableSkills = getAvailableSkillsForChest();
+                        let isSkill = Math.random() < 0.5 && availableSkills.length > 0;
+                        
+                        if (isSkill) {
+                            let reward = availableSkills[Math.floor(Math.random() * availableSkills.length)];
+                            if (reward.maxLevel !== null) reward.level++;
+                            reward.apply();
+                            
+                            slot.className = "chest-slot active";
+                            let levelText = (reward.maxLevel && !reward.isEvo) ? `<br><span style="font-size:12px;color:#ccc;">升至 Lv.${reward.level}</span>` : "";
+                            slot.innerHTML = `<strong style="color:${reward.isEvo ? '#fff' : '#00ffff'}; text-shadow: 0 0 5px ${reward.isEvo ? '#fff' : '#00ffff'};">${reward.name}</strong>${levelText}<br><span style="font-size:14px;color:#ffd700;font-weight:bold;margin-top:10px;display:inline-block;">GET!</span>`;
+                        } else {
+                            let rewardGold = goldPool[Math.floor(Math.random() * goldPool.length)];
+                            sessionGold += rewardGold;
+                            
+                            slot.className = "chest-slot active";
+                            slot.style.borderColor = "#ffaa00";
+                            slot.innerHTML = `<strong style="color:#ffcc00; text-shadow: 0 0 10px #ffcc00; font-size: 22px;">💰 ${rewardGold}</strong><br><span style="font-size:14px;color:#ccc;margin-top:5px;">金幣</span><br><span style="font-size:14px;color:#ffd700;font-weight:bold;margin-top:10px;display:inline-block;">GET!</span>`;
+                        }
+                    });
+                    document.getElementById("chest-ok-btn").style.display = "block";
+                    updateUI();
+                }
+            }, 100);
+        }
+
+        function closeChestModal() {
+            modals.chest.style.display = "none";
+            gameState = "PLAYING";
+        }
+        window.closeChestModal = closeChestModal;
+
+        function gainXp(amount) {
+            currentXp += amount;
+            if (currentXp >= xpNeeded && gameState === "PLAYING") processLevelUp(); else { xpBar.style.width = `${(currentXp / xpNeeded) * 100}%`; updateUI(); }
+        }
+
+        function processLevelUp() {
+            currentXp -= xpNeeded; level++; xpNeeded = Math.floor(xpNeeded * 1.2); 
+            gameState = "LEVEL_UP"; modals.level.style.display = "flex"; skillChoicesDiv.innerHTML = "";
+            let availableSkills = SKILL_POOL.filter(s => s.level < s.maxLevel);
+            EVOLUTIONS.forEach(evo => {
+                if (!evo.applied) {
+                    let wpn = SKILL_POOL.find(s => s.id === evo.reqWeapon); let pass = SKILL_POOL.find(s => s.id === evo.reqPassive);
+                    if (wpn && wpn.level >= wpn.maxLevel && pass && pass.level > 0) { availableSkills.push({ name: evo.name, desc: evo.desc, level: 0, maxLevel: 1, isEvo: true, apply: () => { evo.applied = true; evo.apply(); } }); }
+                }
+            });
+            let choices = availableSkills.length > 0 ? availableSkills.sort(() => 0.5 - Math.random()).slice(0, 3) : [FALLBACK_SKILL];
+            choices.forEach(skill => {
+                let btn = document.createElement("button"); btn.className = skill.isEvo ? "skill-btn evo-btn" : "skill-btn";
+                let levelText = skill.maxLevel && !skill.isEvo ? ` (Lv.${skill.level + 1}/${skill.maxLevel})` : "";
+                btn.innerHTML = `<strong>${skill.name}${levelText}</strong><br><span style="font-size:14px; color:${skill.isEvo ? '#fff' : '#aaa'};">${skill.desc}</span>`;
+                btn.onclick = () => { 
+                    if(skill.maxLevel !== null) skill.level++; skill.apply(); 
+                    if (currentXp >= xpNeeded) processLevelUp(); else { gameState = "PLAYING"; modals.level.style.display = "none"; xpBar.style.width = `${(currentXp / xpNeeded) * 100}%`; updateUI(); }
+                };
+                skillChoicesDiv.appendChild(btn);
+            });
+            xpBar.style.width = `100%`; updateUI();
+        }
+
+        function updateUI() {
+            let dangerText = dangerLevel >= 20 ? `<span style="color:#ff00ff;">BOSS！</span>` : `<span style="color:red;">${dangerLevel}</span>`;
+            let shieldText = player.maxShield > 0 ? ` | 盾：<span style="color:#00ffff;">${Math.floor(player.shield)}/${player.maxShield}</span>` : "";
+            statusText.innerHTML = `時間：${formatTime(gameSeconds)} (危險 ${dangerText})<br>LV: ${level} | 血：${Math.floor(player.hp)}/${player.maxHp}${shieldText} | 殺：${score} | 金：<span style="color:gold;">${sessionGold}</span>`;
+        }
+
+        function endGame(isWin) {
+            gameState = "GAME_OVER"; savedGold += sessionGold; 
+            document.getElementById("boss-hp-container").style.display = "none";
+            
+            if (gameSeconds >= 300) {
+                if (!achievements['survive_5m']) achievements['survive_5m'] = { unlocked: false, claimed: false };
+                achievements['survive_5m'].unlocked = true;
+            }
+            if (score >= 1000) {
+                if (!achievements['kill_1000']) achievements['kill_1000'] = { unlocked: false, claimed: false };
+                achievements['kill_1000'].unlocked = true;
+            }
+
+            let unlockMsg = "";
+            if (isWin) {
+                if (currentMap === "plains" && !unlockedMaps.includes("desert")) {
+                    unlockedMaps.push("desert");
+                    unlockMsg = "<br><span style='color:#00ffcc;'>✨ 解鎖新地圖：🏜️ 荒漠地圖！</span>";
+                } else if (currentMap === "desert" && !unlockedMaps.includes("cave")) {
+                    unlockedMaps.push("cave");
+                    unlockMsg = "<br><span style='color:#00ffcc;'>✨ 解鎖新地圖：🦇 洞窟地圖！</span>";
+                }
+            }
+            saveBaseData();
+
+            document.getElementById("end-title").innerText = isWin ? "🏆 勝利！" : "💀 遊戲結束"; document.getElementById("end-title").style.color = isWin ? "#ffd700" : "#ff0000";
+            document.getElementById("end-stats").innerHTML = `存活：${formatTime(gameSeconds)} | 最終等級：${level} | 擊殺：${score} | 金幣：💰 ${sessionGold}${unlockMsg}`;
+            
+            let totalDamage = Object.values(damageStats).reduce((a, b) => a + b, 0);
+            let chartHTML = `<div style="width: 450px; text-align: left; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #555;">`;
+            chartHTML += `<h3 style="margin: 0 0 10px 0; color: #fff; font-size: 18px; text-align: center;">戰鬥傷害分析</h3>`;
+            
+            if (totalDamage === 0) { chartHTML += `<p style="text-align: center; color: #aaa;">沒有造成任何傷害</p>`; } 
+            else {
+                let maxDmg = Math.max(...Object.values(damageStats));
+                const statNames = { shoot: "🔫 一般射擊", explosion: "💥 爆裂彈", orbital: "💫 護體法球", aura: "🔥 傷害光環", ult: "🌠 大招", molotov: "🔥 燃燒瓶", lightning: "⚡ 閃電鏈", pet: "🤖 戰寵火力" };
+                const statColors = { shoot: "#ffff00", explosion: "#ff5500", orbital: "#00ffff", aura: "#ff8800", ult: "#ff00ff", molotov: "#ff3300", lightning: "#00aaff", pet: "#ff0088" };
+                let sortedStats = Object.keys(damageStats).sort((a, b) => damageStats[b] - damageStats[a]);
+                sortedStats.forEach(key => {
+                    if (damageStats[key] > 0) {
+                        let pct = (damageStats[key] / maxDmg) * 100;
+                        chartHTML += `<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; color: #ddd;"><span>${statNames[key]}</span><span>${Math.floor(damageStats[key]).toLocaleString()}</span></div><div style="width: 100%; height: 12px; background: #444; border-radius: 6px; overflow: hidden;"><div style="width: ${pct}%; height: 100%; background: ${statColors[key]}; box-shadow: 0 0 5px ${statColors[key]};"></div></div></div>`;
+                    }
+                });
+            }
+            chartHTML += `</div>`; document.getElementById("end-damage-chart").innerHTML = chartHTML;
+            modals.end.style.display = "flex";
+        }
+
+        function resolveObstacles(entity) {
+            for (let obs of obstacles) {
+                let dist = Math.hypot(entity.x - obs.x, entity.y - obs.y); let minDist = entity.radius + obs.radius;
+                if (dist < minDist) { let overlap = minDist - dist; entity.x += ((entity.x - obs.x) / dist) * overlap; entity.y += ((entity.y - obs.y) / dist) * overlap; }
+            }
+        }
+        function spawnDamageText(x, y, damage) {
+            let isCrit = damage > player.damage * 1.5;
+            floatingTexts.push({ x: x, y: y, text: `-${Math.floor(damage)}`, life: 30, color: isCrit ? "#ff3333" : "#ffffff", size: isCrit ? 22 : 16 });
+        }
+        function getGridKey(x, y) { return `${Math.floor(x / CELL_SIZE)},${Math.floor(y / CELL_SIZE)}`; }
+
+        function update(dt) {
+            if (gameState !== "PLAYING") return; 
+            let timeScale = dt * 60; 
+            
+            let playerSpeedMult = 1.0;
+            if (currentMap === "desert") {
+                for (let q of quicksands) { if (Math.hypot(player.x - q.x, player.y - q.y) < q.radius) { playerSpeedMult = 0.4; break; } }
+            }
+            let currentSpeed = player.speed * timeScale * playerSpeedMult;
+
+            if (petEntity) {
+                petEntity.floatAngle += 0.05 * timeScale;
+                let targetX = player.x + Math.cos(petEntity.floatAngle) * 50;
+                let targetY = player.y + Math.sin(petEntity.floatAngle) * 50 - 20;
+                petEntity.x += (targetX - petEntity.x) * 0.1 * timeScale;
+                petEntity.y += (targetY - petEntity.y) * 0.1 * timeScale;
+
+                if (petEntity.action === 'collect' || petEntity.action === 'both') {
+                    for (let i = drops.length - 1; i >= 0; i--) {
+                        let d = drops[i];
+                        let dist = Math.hypot(petEntity.x - d.x, petEntity.y - d.y);
+                        if (d.type !== "medkit" && d.type !== "chest" && dist < petEntity.radius) {
+                            d.x += (petEntity.x - d.x) * 0.25 * timeScale;
+                            d.y += (petEntity.y - d.y) * 0.25 * timeScale;
+                        }
+                        if (dist < 25 + d.radius) { 
+                            if (d.type === "xp" || d.type === "elite_xp") gainXp(d.xpValue);
+                            else if (d.type === "coin") { sessionGold += 1; updateUI(); }
+                            else if (d.type === "chest") { openChestModal(); drops.splice(i, 1); continue; }
+                            drops.splice(i, 1);
+                        }
+                    }
+                }
+
+                if (petEntity.action === 'attack' || petEntity.action === 'both') {
+                    petEntity.cooldown -= dt;
+                    if (petEntity.cooldown <= 0) {
+                        let nearest = null; let minDist = 350;
+                        for(let z of zombies) {
+                            let d = Math.hypot(z.x - petEntity.x, z.y - petEntity.y);
+                            if(d < minDist && z.bossState !== "preparing_dash" && z.bossState !== "dashing") { minDist = d; nearest = z; }
+                        }
+                        if(nearest) {
+                            petEntity.cooldown = petEntity.cooldownMax;
+                            nearest.hp -= petEntity.damage;
+                            spawnDamageText(nearest.x, nearest.y, petEntity.damage);
+                            damageStats.pet += petEntity.damage;
+                            petLasers.push({ x1: petEntity.x, y1: petEntity.y, x2: nearest.x, y2: nearest.y, life: 0.2 });
+                        }
+                    }
+                }
+            }
+            for (let i = petLasers.length - 1; i >= 0; i--) {
+                petLasers[i].life -= dt;
+                if (petLasers[i].life <= 0) petLasers.splice(i, 1);
+            }
+            
+            if (player.molotovLevel > 0) {
+                molotovCooldown -= dt;
+                if (molotovCooldown <= 0) {
+                    molotovCooldown = Math.max(1, 4 - player.molotovLevel * 0.5);
+                    let targets = zombies.sort(() => 0.5 - Math.random()).slice(0, 1);
+                    targets.forEach(tz => { thrownWeapons.push({ x: player.x, y: player.y, tx: tz.x, ty: tz.y, speed: 600 * dt, type: 'molotov' }); });
+                }
+            }
+
+            if (player.lightningLevel > 0) {
+                lightningCooldown -= dt;
+                if (lightningCooldown <= 0) {
+                    lightningCooldown = Math.max(1.0, 3.5 - player.lightningLevel * 0.4);
+                    let bounces = 2 + player.lightningLevel; let searchRadius = 400; let dmg = player.damage * 2 * 1.2;
+                    let currentPos = { x: player.x, y: player.y }; let hitSet = new Set(); let points = [{x: player.x, y: player.y}];
+                    for(let i=0; i<bounces; i++) {
+                        let nearest = null; let minDist = searchRadius;
+                        for (let z of zombies) { if (!hitSet.has(z)) { let d = Math.hypot(z.x - currentPos.x, z.y - currentPos.y); if (d < minDist) { minDist = d; nearest = z; } } }
+                        if (nearest) { hitSet.add(nearest); nearest.hp -= dmg; spawnDamageText(nearest.x, nearest.y, dmg); damageStats.lightning += dmg; points.push({x: nearest.x, y: nearest.y}); currentPos = nearest; } else break;
+                    }
+                    if (points.length > 1) { lightningEffects.push({ points: points, life: 0.3 }); }
+                }
+            }
+
+            for (let i = thrownWeapons.length - 1; i >= 0; i--) {
+                let tw = thrownWeapons[i]; let dist = Math.hypot(tw.tx - tw.x, tw.ty - tw.y);
+                if (dist < tw.speed) {
+                    let radius = 50 + player.molotovLevel * 10; let duration = 4.0;
+                    firePools.push({ x: tw.tx, y: tw.ty, radius: radius, life: duration, maxLife: duration, tick: 0 }); thrownWeapons.splice(i, 1);
+                } else { tw.x += ((tw.tx - tw.x) / dist) * tw.speed; tw.y += ((tw.ty - tw.y) / dist) * tw.speed; }
+            }
+            
+            for (let i = toxicBombs.length - 1; i >= 0; i--) {
+                let tb = toxicBombs[i]; let dist = Math.hypot(tb.tx - tb.x, tb.ty - tb.y);
+                if (dist < tb.speed) {
+                    acidPools.push({ x: tb.tx, y: tb.ty, radius: 45, life: 5.0, maxLife: 5.0, tick: 0 }); toxicBombs.splice(i, 1);
+                } else { tb.x += ((tb.tx - tb.x) / dist) * tb.speed; tb.y += ((tb.ty - tb.y) / dist) * tb.speed; }
+            }
+
+            for (let i = firePools.length - 1; i >= 0; i--) {
+                let fp = firePools[i]; fp.life -= dt; fp.tick -= dt;
+                if (fp.tick <= 0) { fp.tick = 0.5; zombies.forEach(z => { if (Math.hypot(z.x - fp.x, z.y - fp.y) < fp.radius + z.radius) { z.burnTimer = 3.0; if (z.burnTick <= 0) z.burnTick = 0; } }); }
+                if (fp.life <= 0) firePools.splice(i, 1);
+            }
+
+            for (let i = acidPools.length - 1; i >= 0; i--) {
+                let ap = acidPools[i]; ap.life -= dt; ap.tick -= dt;
+                if (ap.tick <= 0) {
+                    ap.tick = 0.5; 
+                    if (Math.hypot(player.x - ap.x, player.y - ap.y) < ap.radius + player.radius) {
+                        if (!player.isInvincible) {
+                            let dmg = 12 * timeScale;
+                            if (player.shield > 0) { player.shield -= dmg; if (player.shield < 0) { player.hp += player.shield; player.shield = 0; } } else { player.hp -= dmg; }
+                            updateUI(); if (player.hp <= 0) { endGame(false); return; }
+                        }
+                    }
+                }
+                if (ap.life <= 0) acidPools.splice(i, 1);
+            }
+
+            for (let i = lightningEffects.length - 1; i >= 0; i--) { lightningEffects[i].life -= dt; if (lightningEffects[i].life <= 0) lightningEffects.splice(i, 1); }
+
+            for (let i = enemyExplosions.length - 1; i >= 0; i--) {
+                let ex = enemyExplosions[i];
+                ex.radius += (ex.maxRadius - ex.radius) * 0.15 * timeScale;
+                ex.life -= 1 * timeScale;
+                if (!ex.hitPlayer && Math.hypot(player.x - ex.x, player.y - ex.y) < ex.radius + player.radius) {
+                    if (!player.isInvincible) {
+                        ex.hitPlayer = true;
+                        let dmg = ex.damage;
+                        if (player.shield > 0) { player.shield -= dmg; if (player.shield < 0) { player.hp += player.shield; player.shield = 0; } } else { player.hp -= dmg; }
+                        updateUI(); if (player.hp <= 0) { endGame(false); return; }
+                    }
+                }
+                if (ex.life <= 0) enemyExplosions.splice(i, 1);
+            }
+
+            if (player.dashCooldown > 0) {
+                player.dashCooldown -= dt; let progress = Math.max(0, 1 - (player.dashCooldown / player.dashCooldownMax));
+                dashBar.style.width = `${progress * 100}%`; dashBar.style.background = progress >= 1 ? "#00ffcc" : "#555"; dashText.innerText = progress >= 1 ? "衝刺就緒" : `冷卻中 (${player.dashCooldown.toFixed(1)}s)`;
+            }
+
+            if (player.isDashing) {
+                player.dashTimer -= dt; currentSpeed *= player.dashSpeedMult; 
+                trails.push({ x: player.x, y: player.y, life: 10, maxLife: 10, radius: player.radius, type: "player" });
+                if (player.dashTimer <= 0) { player.isDashing = false; player.isInvincible = false; }
+            }
+
+            if (player.maxShield > 0 && player.shield < player.maxShield) {
+                player.shield = Math.min(player.maxShield, player.shield + player.shieldRegen * timeScale);
+                if (Math.random() < 0.05 * timeScale) updateUI(); 
+            }
+
+            if ((keys["ArrowUp"] || keys["KeyW"]) && player.y > player.radius) player.y -= currentSpeed;
+            if ((keys["ArrowDown"] || keys["KeyS"]) && player.y < WORLD.height - player.radius) player.y += currentSpeed;
+            if ((keys["ArrowLeft"] || keys["KeyA"]) && player.x > player.radius) player.x -= currentSpeed;
+            if ((keys["ArrowRight"] || keys["KeyD"]) && player.x < WORLD.width - player.radius) player.x += currentSpeed;
+            if (joy.active && (joy.x || joy.y)) {
+                player.x = Math.max(player.radius, Math.min(WORLD.width - player.radius, player.x + joy.x * currentSpeed));
+                player.y = Math.max(player.radius, Math.min(WORLD.height - player.radius, player.y + joy.y * currentSpeed));
+            }
+            resolveObstacles(player);
+
+            camera.x = Math.max(0, Math.min(WORLD.width - canvas.width, player.x - canvas.width / 2));
+            camera.y = Math.max(0, Math.min(WORLD.height - canvas.height, player.y - canvas.height / 2));
+            player.orbitalAngle += 0.06 * timeScale;
+
+            for (let i = trails.length - 1; i >= 0; i--) { trails[i].life -= 1 * timeScale; if (trails[i].life <= 0) trails.splice(i, 1); }
+
+            for (let i = drops.length - 1; i >= 0; i--) {
+                let d = drops[i]; let dist = Math.hypot(player.x - d.x, player.y - d.y);
+                if (d.type !== "medkit" && d.type !== "chest" && dist < player.pickupRadius) { d.x += (player.x - d.x) * 0.15 * timeScale; d.y += (player.y - d.y) * 0.15 * timeScale; }
+                if (dist < player.radius + d.radius) {
+                    if (d.type === "xp" || d.type === "elite_xp") gainXp(d.xpValue);
+                    else if (d.type === "medkit") { player.hp = Math.min(player.maxHp, player.hp + 40); updateUI(); }
+                    else if (d.type === "coin") { sessionGold += 1; updateUI(); }
+                    else if (d.type === "chest") { openChestModal(); drops.splice(i, 1); continue; } 
+                    drops.splice(i, 1);
+                }
+            }
+
+            targetZombie = null; let minDistance = Infinity;
+            for (let z of zombies) { 
+                if (z.type === "bomber" || z.bossState === "preparing_dash" || z.bossState === "dashing") continue;
+                let dist = Math.hypot(z.x - player.x, z.y - player.y); 
+                if (dist < minDistance) { minDistance = dist; targetZombie = z; } 
+            }
+
+            shootCooldown += timeScale;
+            if (shootCooldown >= SHOOT_INTERVAL) {
+                shootCooldown = 0;
+                if (targetZombie) {
+                    let baseAngle = Math.atan2(targetZombie.y - player.y, targetZombie.x - player.x);
+                    let startAngle = baseAngle - (player.multiShot - 1) * 0.1;
+                    for(let k = 0; k < player.multiShot; k++) {
+                        let currentAngle = startAngle + (k * 0.2);
+                        bullets.push({ x: player.x, y: player.y, radius: 4, color: player.isEvolvedShot ? "#ff5500" : "#ffff00", dx: Math.cos(currentAngle) * 14, dy: Math.sin(currentAngle) * 14, damage: player.damage, pierce: player.basePierce, hitZombies: new Set(), isUlt: false });
+                    }
+                }
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i]; b.x += b.dx * timeScale; b.y += b.dy * timeScale;
+                if (b.x < 0 || b.x > WORLD.width || b.y < 0 || b.y > WORLD.height) bullets.splice(i, 1);
+            }
+
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                let eb = enemyBullets[i]; eb.x += eb.dx * timeScale; eb.y += eb.dy * timeScale;
+                if (eb.x < 0 || eb.x > WORLD.width || eb.y < 0 || eb.y > WORLD.height) { enemyBullets.splice(i, 1); continue; }
+                if (Math.hypot(player.x - eb.x, player.y - eb.y) < player.radius + eb.radius) {
+                    if (!player.isInvincible) {
+                        let dmg = eb.damage;
+                        if (player.shield > 0) { player.shield -= dmg; if (player.shield < 0) { player.hp += player.shield; player.shield = 0; } } else { player.hp -= dmg; }
+                        updateUI(); if (player.hp <= 0) { endGame(false); return; }
+                    }
+                    enemyBullets.splice(i, 1);
+                }
+            }
+
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                let ex = explosions[i]; ex.radius += 6 * timeScale; ex.life -= 1 * timeScale;
+                if (ex.life <= 0) explosions.splice(i, 1);
+            }
+
+            floatingTexts.forEach(ft => { ft.y -= 1 * timeScale; ft.life -= 1 * timeScale; }); floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+
+            let spatialGrid = new Map();
+            for (let z of zombies) { let key = getGridKey(z.x, z.y); if (!spatialGrid.has(key)) spatialGrid.set(key, []); spatialGrid.get(key).push(z); }
+
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                let b = bullets[j]; let bxCell = Math.floor(b.x / CELL_SIZE); let byCell = Math.floor(b.y / CELL_SIZE); let bulletDestroyed = false;
+                for (let dx = -1; dx <= 1 && !bulletDestroyed; dx++) {
+                    for (let dy = -1; dy <= 1 && !bulletDestroyed; dy++) {
+                        let neighborKey = `${bxCell + dx},${byCell + dy}`; let zombiesInCell = spatialGrid.get(neighborKey);
+                        if (zombiesInCell) {
+                            for (let z of zombiesInCell) {
+                                if (z.hp <= 0 || z.bossState === "preparing_dash" || z.bossState === "dashing") continue; 
+                                if (!b.hitZombies.has(z) && Math.hypot(b.x - z.x, b.y - z.y) < z.radius + b.radius) {
+                                    z.hp -= b.damage; spawnDamageText(z.x, z.y, b.damage); b.hitZombies.add(z);
+                                    if (b.isUlt) damageStats.ult += b.damage; else damageStats.shoot += b.damage;
+                                    if (player.isEvolvedShot && !b.isUlt) { explosions.push({ x: z.x, y: z.y, radius: 10, life: 10, damage: player.damage * 2, hitZombies: new Set() }); }
+                                    b.pierce--; if (b.pierce <= 0) { bullets.splice(j, 1); bulletDestroyed = true; break; }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                let z = zombies[i]; let distToPlayer = Math.hypot(player.x - z.x, player.y - z.y); let angleToPlayer = Math.atan2(player.y - z.y, player.x - z.x);
+                
+                let zSpeedMult = 1.0;
+                if (currentMap === "desert") {
+                    for (let q of quicksands) { if (Math.hypot(z.x - q.x, z.y - q.y) < q.radius) { zSpeedMult = 0.4; break; } }
+                }
+                let activeSpeed = z.speed * zSpeedMult;
+                
+                if (z.isBoss) {
+                    document.getElementById("boss-hp-container").style.display = "block";
+                    document.getElementById("boss-hp-bar").style.width = `${Math.max(0, (z.hp / z.maxHp) * 100)}%`;
+
+                    z.bossSkillTimer -= dt;
+                    if (z.bossState === "chasing" && z.bossSkillTimer <= 0) {
+                        let randSkill = Math.floor(Math.random() * 3);
+                        if (randSkill === 0) { 
+                            for (let k = 0; k < 18; k++) {
+                                let a = (k / 18) * Math.PI * 2;
+                                enemyBullets.push({ x: z.x, y: z.y, radius: 6, color: "#ff00ff", dx: Math.cos(a) * 6, dy: Math.sin(a) * 6, damage: 15 });
+                            }
+                            z.bossSkillTimer = 3.5;
+                        } else if (randSkill === 1) { 
+                            z.bossState = "preparing_dash";
+                            z.stateTimer = 1.0;
+                        } else if (randSkill === 2) { 
+                            for (let k = 0; k < 5; k++) {
+                                let a = (k / 5) * Math.PI * 2;
+                                zombies.push({
+                                    x: z.x + Math.cos(a)*80, y: z.y + Math.sin(a)*80,
+                                    radius: 12, speed: 2.5, color: "#ff2200", hp: 120 + level * 10,
+                                    isElite: false, isBoss: false, type: "bomber",
+                                    burnTimer: 0, burnTick: 0, shootCooldown: 0, isDashing: false, dashTimer: 0, dashCooldown: 0, dashDx: 0, dashDy: 0
+                                });
+                            }
+                            z.bossSkillTimer = 4.0;
+                        }
+                    }
+
+                    if (z.bossState === "preparing_dash") {
+                        z.stateTimer -= dt;
+                        activeSpeed = 0; 
+                        z.color = (Math.floor(z.stateTimer * 10) % 2 === 0) ? "#ffffff" : "#ff8800";
+                        if (z.stateTimer <= 0) {
+                            z.bossState = "dashing";
+                            z.stateTimer = 1.0; 
+                            z.dashDx = Math.cos(angleToPlayer);
+                            z.dashDy = Math.sin(angleToPlayer);
+                            z.color = "#ff8800";
+                        }
+                    } else if (z.bossState === "dashing") {
+                        z.stateTimer -= dt;
+                        activeSpeed = z.speed * zSpeedMult * 5.5; 
+                        if (z.stateTimer <= 0) {
+                            z.bossState = "chasing";
+                            z.bossSkillTimer = 3.0;
+                        }
+                    } else {
+                        z.color = "#ff8800";
+                    }
+                }
+
+                if (z.burnTimer > 0) {
+                    z.burnTimer -= dt; z.burnTick -= dt;
+                    if (z.burnTick <= 0) { let burnDmg = player.damage * 0.5; z.hp -= burnDmg; spawnDamageText(z.x, z.y, burnDmg); damageStats.molotov += burnDmg; z.burnTick = 0.5; }
+                }
+
+                if (z.type === "spitter") {
+                    if (distToPlayer < 350 && distToPlayer > 200) { activeSpeed *= 0.2; } else if (distToPlayer <= 200) { activeSpeed = -z.speed * zSpeedMult * 0.4; }
+                    z.shootCooldown -= dt;
+                    if (z.shootCooldown <= 0 && distToPlayer < 450) { z.shootCooldown = 2.5; toxicBombs.push({ x: z.x, y: z.y, tx: player.x, ty: player.y, speed: 400 * dt, radius: 8 }); }
+                } else if (z.type === "charger") {
+                    z.dashCooldown -= dt;
+                    if (z.isDashing) {
+                        activeSpeed = z.speed * zSpeedMult * 4; z.dashTimer -= dt; if (z.dashTimer <= 0) z.isDashing = false;
+                    } else {
+                        if (distToPlayer < 300 && z.dashCooldown <= 0) { z.isDashing = true; z.dashTimer = 0.5; z.dashCooldown = 3.0; z.dashDx = Math.cos(angleToPlayer); z.dashDy = Math.sin(angleToPlayer); }
+                    }
+                }
+
+                if (distToPlayer > 0) {
+                    if (z.type === "charger" && z.isDashing) {
+                        z.x += z.dashDx * activeSpeed * timeScale; z.y += z.dashDy * activeSpeed * timeScale;
+                        if(Math.random() < 0.5) trails.push({ x: z.x, y: z.y, life: 8, maxLife: 8, radius: z.radius, type: "enemy" });
+                    } else if (z.isBoss && z.bossState === "dashing") {
+                        z.x += z.dashDx * activeSpeed * timeScale; z.y += z.dashDy * activeSpeed * timeScale;
+                        if(Math.random() < 0.5) trails.push({ x: z.x, y: z.y, life: 10, maxLife: 10, radius: z.radius, type: "enemy" });
+                    } else if (z.isBoss && z.bossState === "preparing_dash") {
+                    } else { 
+                        z.x += Math.cos(angleToPlayer) * activeSpeed * timeScale; z.y += Math.sin(angleToPlayer) * activeSpeed * timeScale; 
+                    }
+                }
+                resolveObstacles(z);
+
+                for (let ex of explosions) { if (!ex.hitZombies.has(z) && Math.hypot(ex.x - z.x, ex.y - z.y) < z.radius + ex.radius) { z.hp -= ex.damage; spawnDamageText(z.x, z.y, ex.damage); ex.hitZombies.add(z); damageStats.explosion += ex.damage; } }
+                
+                if (player.auraLevel > 0 && distToPlayer < 80 + player.auraLevel * 30 + z.radius) { let auraDmg = player.auraLevel * 0.4 * timeScale; z.hp -= auraDmg; if(Math.random() < 0.05 * timeScale) spawnDamageText(z.x, z.y, player.auraLevel * 0.4); damageStats.aura += auraDmg; }
+                if (player.orbitals > 0) {
+                    for(let o = 0; o < player.orbitals; o++) {
+                        let ox = player.x + Math.cos(player.orbitalAngle + (o/player.orbitals)*Math.PI*2) * 70; let oy = player.y + Math.sin(player.orbitalAngle + (o/player.orbitals)*Math.PI*2) * 70;
+                        if (Math.hypot(ox - z.x, oy - z.y) < 15 + z.radius) { let dmg = (1.2 + player.damage * 0.2) * timeScale; z.hp -= dmg; if(Math.random() < 0.1 * timeScale) spawnDamageText(z.x, z.y, dmg / timeScale); damageStats.orbital += dmg; }
+                    }
+                }
+
+                if (distToPlayer < player.radius + z.radius) {
+                    if (!player.isInvincible) {
+                        if (z.type === "bomber") {
+                            z.hp = 0; 
+                        } else {
+                            let dmg = (z.isBoss ? 5.0 : z.isElite ? 1.5 : (z.type === "charger" && z.isDashing ? 2.5 : 0.5)) * timeScale;
+                            if (player.shield > 0) { player.shield -= dmg; if (player.shield < 0) { player.hp += player.shield; player.shield = 0; } } else { player.hp -= dmg; }
+                            updateUI(); if (player.hp <= 0) { endGame(false); return; }
+                        }
+                    }
+                }
+
+                if (z.hp <= 0) {
+                    if (z.type === "bomber") {
+                        enemyExplosions.push({ x: z.x, y: z.y, radius: 10, maxRadius: 80, life: 15, damage: 30, hitPlayer: false });
+                    }
+
+                    if (z.isBoss) { bossDefeated = true; endGame(true); return; } 
+                    else if (z.isElite) { 
+                        drops.push({ x: z.x, y: z.y, radius: 8, color: "#ffd700", type: "elite_xp", xpValue: 50 });
+                        if (Math.random() < 0.10) {
+                            drops.push({ x: z.x + 15, y: z.y + 15, radius: 18, type: "chest" }); 
+                        }
+                    } 
+                    else if (z.type !== "bomber") { drops.push({ x: z.x, y: z.y, radius: 5, color: "#00ffff", type: "xp", xpValue: (z.type === "normal" ? 10 : 20) }); if(Math.random() < 0.05) drops.push({ x: z.x + 5, y: z.y + 5, radius: 8, type: "coin" }); }
+                    
+                    zombies.splice(i, 1); score += 1;
+                    if (ultEnergy < MAX_ULT_ENERGY) { ultEnergy = Math.min(MAX_ULT_ENERGY, ultEnergy + (z.isBoss ? 100 : z.isElite ? 10 : 2)); updateUltUI(); }
+                    updateUI();
+                }
+            }
+        }
+
+        function drawOffScreenIndicators() {
+            const padding = 25; const cx = canvas.width / 2; const cy = canvas.height / 2; let targets = [];
+            drops.forEach(d => { if (d.type === "medkit" || d.type === "chest") targets.push({ x: d.x, y: d.y, type: d.type }); });
+            zombies.forEach(z => { if (z.isBoss) targets.push({ x: z.x, y: z.y, type: "boss" }); });
+
+            targets.forEach(target => {
+                let screenX = target.x - camera.x; let screenY = target.y - camera.y;
+                if (screenX < 0 || screenX > canvas.width || screenY < 0 || screenY > canvas.height) {
+                    let dx = screenX - cx; let dy = screenY - cy; let angle = Math.atan2(dy, dx);
+                    let scaleX = (cx - padding) / Math.abs(dx); let scaleY = (cy - padding) / Math.abs(dy); let scale = Math.min(scaleX, scaleY);
+                    let indX = cx + dx * scale; let indY = cy + dy * scale;
+                    ctx.save(); ctx.translate(indX, indY); ctx.rotate(angle);
+                    ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10); ctx.closePath();
+                    
+                    if (target.type === "medkit") { ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 3; ctx.stroke(); } 
+                    else if (target.type === "chest") { ctx.fillStyle = "#ffd700"; ctx.fill(); ctx.strokeStyle = "#8b4513"; ctx.lineWidth = 3; ctx.stroke(); }
+                    else if (target.type === "boss") { ctx.shadowBlur = 10; ctx.shadowColor = "#ff0000"; ctx.fillStyle = "#ff0000"; ctx.fill(); ctx.strokeStyle = "#ffaa00"; ctx.lineWidth = 3; ctx.stroke(); }
+                    ctx.restore();
+                }
+            });
+        }
+
+        function draw() {
+            if (currentMap === "desert") { ctx.fillStyle = "#332211"; } 
+            else if (currentMap === "cave") { ctx.fillStyle = "#1c1c24"; } 
+            else { ctx.fillStyle = "#1a1a1a"; }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState !== "MENU") {
+                ctx.strokeStyle = "#444"; ctx.lineWidth = 10; ctx.strokeRect(0 - camera.x, 0 - camera.y, WORLD.width, WORLD.height); 
+                ctx.strokeStyle = currentMap === "desert" ? "#553311" : (currentMap === "cave" ? "#2a2a35" : "#222"); ctx.lineWidth = 1;
+                for(let x = 0; x < WORLD.width; x += 100) { ctx.beginPath(); ctx.moveTo(x - camera.x, 0 - camera.y); ctx.lineTo(x - camera.x, WORLD.height - camera.y); ctx.stroke(); }
+                for(let y = 0; y < WORLD.height; y += 100) { ctx.beginPath(); ctx.moveTo(0 - camera.x, y - camera.y); ctx.lineTo(WORLD.width - camera.x, y - camera.y); ctx.stroke(); }
+            }
+
+            if (currentMap === "desert") {
+                quicksands.forEach(q => { ctx.beginPath(); ctx.arc(q.x - camera.x, q.y - camera.y, q.radius, 0, Math.PI * 2); ctx.fillStyle = "rgba(194, 153, 91, 0.4)"; ctx.fill(); ctx.strokeStyle = "rgba(194, 153, 91, 0.8)"; ctx.lineWidth = 2; ctx.stroke(); ctx.closePath(); });
+            }
+
+            acidPools.forEach(ap => { ctx.beginPath(); ctx.arc(ap.x - camera.x, ap.y - camera.y, ap.radius, 0, Math.PI * 2); ctx.fillStyle = `rgba(50, 255, 50, ${0.1 + (ap.life/ap.maxLife)*0.4})`; ctx.fill(); ctx.closePath(); });
+            firePools.forEach(fp => { ctx.beginPath(); ctx.arc(fp.x - camera.x, fp.y - camera.y, fp.radius, 0, Math.PI * 2); ctx.fillStyle = `rgba(255, 120, 0, ${0.1 + (fp.life/fp.maxLife)*0.3})`; ctx.fill(); ctx.closePath(); });
+            obstacles.forEach(obs => { ctx.beginPath(); ctx.arc(obs.x - camera.x, obs.y - camera.y, obs.radius, 0, Math.PI * 2); ctx.fillStyle = obs.color; ctx.fill(); ctx.strokeStyle = "#333"; ctx.lineWidth = 3; ctx.stroke(); ctx.closePath(); });
+            
+            enemyExplosions.forEach(ex => { 
+                ctx.beginPath(); ctx.arc(ex.x - camera.x, ex.y - camera.y, ex.radius, 0, Math.PI * 2); 
+                ctx.fillStyle = `rgba(255, 0, 0, ${ex.life / 15 * 0.5})`; ctx.fill(); 
+                ctx.strokeStyle = `rgba(255, 100, 0, ${ex.life / 15})`; ctx.lineWidth = 2; ctx.stroke(); ctx.closePath(); 
+            });
+            explosions.forEach(ex => { ctx.beginPath(); ctx.arc(ex.x - camera.x, ex.y - camera.y, ex.radius, 0, Math.PI * 2); ctx.fillStyle = `rgba(255, 80, 0, ${ex.life / 10})`; ctx.fill(); ctx.closePath(); });
+            
+            drops.forEach(d => {
+                if (d.type === "xp") { ctx.fillStyle = d.color; ctx.fillRect(d.x - camera.x - d.radius, d.y - camera.y - d.radius, d.radius*2, d.radius*2); } 
+                else if (d.type === "elite_xp") { ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(d.x - camera.x, d.y - camera.y, d.radius, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke(); } 
+                else if (d.type === "coin") { ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(d.x - camera.x, d.y - camera.y, d.radius, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#daaa00"; ctx.lineWidth = 2; ctx.stroke(); } 
+                else if (d.type === "medkit") { let dx = d.x - camera.x, dy = d.y - camera.y; ctx.fillStyle = "#fff"; ctx.fillRect(dx - d.radius, dy - d.radius, d.radius*2, d.radius*2); ctx.fillStyle = "#f00"; ctx.fillRect(dx - 2, dy - d.radius + 4, 4, d.radius*2 - 8); ctx.fillRect(dx - d.radius + 4, dy - 2, d.radius*2 - 8, 4); }
+                else if (d.type === "chest") { 
+                    let cx = d.x - camera.x; let cy = d.y - camera.y;
+                    ctx.fillStyle = "#8b4513"; ctx.fillRect(cx - 14, cy - 10, 28, 20); 
+                    ctx.fillStyle = "#ffd700"; ctx.fillRect(cx - 14, cy - 2, 28, 4);  
+                    ctx.fillStyle = "#fff"; ctx.fillRect(cx - 3, cy - 4, 6, 8);      
+                }
+            });
+
+            toxicBombs.forEach(tb => { ctx.beginPath(); ctx.arc(tb.x - camera.x, tb.y - camera.y, tb.radius, 0, Math.PI * 2); ctx.fillStyle = "#33ff33"; ctx.fill(); ctx.strokeStyle = "#115511"; ctx.lineWidth = 2; ctx.stroke(); ctx.closePath(); });
+            thrownWeapons.forEach(tw => { ctx.beginPath(); ctx.arc(tw.x - camera.x, tw.y - camera.y, 6, 0, Math.PI * 2); ctx.fillStyle = "#ff5500"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth=1; ctx.stroke(); ctx.closePath(); });
+            bullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x - camera.x, b.y - camera.y, b.radius, 0, Math.PI * 2); ctx.fillStyle = b.color; ctx.fill(); ctx.closePath(); });
+            enemyBullets.forEach(eb => { ctx.beginPath(); ctx.arc(eb.x - camera.x, eb.y - camera.y, eb.radius, 0, Math.PI * 2); ctx.fillStyle = eb.color; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke(); ctx.closePath(); });
+
+            zombies.forEach(z => { 
+                ctx.beginPath(); ctx.arc(z.x - camera.x, z.y - camera.y, z.radius, 0, Math.PI * 2); 
+                ctx.fillStyle = z.burnTimer > 0 ? "#ffaa00" : z.color;
+                if (z.type === "bomber") { ctx.shadowBlur = 10; ctx.shadowColor = "#ff0000"; }
+                ctx.fill(); ctx.closePath(); ctx.shadowBlur = 0;
+                if (z.isBoss) { ctx.strokeStyle = "#f00"; ctx.lineWidth = 4; ctx.stroke(); } 
+            });
+
+            lightningEffects.forEach(le => {
+                ctx.beginPath(); ctx.moveTo(le.points[0].x - camera.x, le.points[0].y - camera.y);
+                for (let i = 1; i < le.points.length; i++) { ctx.lineTo(le.points[i].x - camera.x, le.points[i].y - camera.y); }
+                ctx.strokeStyle = `rgba(0, 255, 255, ${le.life*3})`; ctx.lineWidth = 3; ctx.lineJoin = "miter"; ctx.stroke();
+            });
+
+            if (gameState === "PLAYING" || gameState === "CHEST_ROULETTE") { 
+                trails.forEach(t => { 
+                    ctx.beginPath(); ctx.arc(t.x - camera.x, t.y - camera.y, t.radius, 0, Math.PI * 2); 
+                    ctx.fillStyle = t.type === "enemy" ? `rgba(255, 100, 0, ${t.life / t.maxLife * 0.5})` : `rgba(0, 255, 204, ${t.life / t.maxLife * 0.5})`; 
+                    ctx.fill(); ctx.closePath(); 
+                }); 
+            }
+
+            if (player && (gameState === "PLAYING" || gameState === "VICTORY" || gameState === "MENU" || gameState === "PAUSED" || gameState === "CHEST_ROULETTE")) {
+                let px = player.x - camera.x; let py = player.y - camera.y;
+                if (player.shield > 0 && gameState !== "MENU") { ctx.beginPath(); ctx.arc(px, py, player.radius + 6, 0, Math.PI * 2); ctx.strokeStyle = `rgba(0, 200, 255, ${0.4 + (player.shield/player.maxShield)*0.6})`; ctx.lineWidth = 3; ctx.stroke(); ctx.closePath(); }
+                
+                petLasers.forEach(l => {
+                    ctx.beginPath(); ctx.moveTo(l.x1 - camera.x, l.y1 - camera.y); ctx.lineTo(l.x2 - camera.x, l.y2 - camera.y);
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${l.life / 0.2})`; ctx.lineWidth = 4; ctx.stroke();
+                });
+
+                if (petEntity && gameState !== "MENU") {
+                    ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.fillText(petEntity.icon, petEntity.x - camera.x, petEntity.y - camera.y);
+                    if (petEntity.action === 'collect' || petEntity.action === 'both') {
+                        ctx.beginPath(); ctx.arc(petEntity.x - camera.x, petEntity.y - camera.y, petEntity.radius, 0, Math.PI * 2);
+                        ctx.strokeStyle = "rgba(0, 255, 100, 0.1)"; ctx.lineWidth = 1; ctx.stroke(); ctx.closePath();
+                    }
+                }
+
+                if (player.isInvincible) { ctx.shadowBlur = 15; ctx.shadowColor = "#00ffcc"; }
+                ctx.beginPath(); ctx.arc(px, py, player.radius, 0, Math.PI * 2); ctx.fillStyle = player.color; ctx.fill(); ctx.closePath(); ctx.shadowBlur = 0; 
+                if (player.orbitals > 0 && gameState !== "MENU") { for(let o = 0; o < player.orbitals; o++) { let angle = player.orbitalAngle + (o / player.orbitals) * Math.PI * 2; ctx.beginPath(); ctx.arc(px + Math.cos(angle)*70, py + Math.sin(angle)*70, 8, 0, Math.PI * 2); ctx.fillStyle = "#0ff"; ctx.fill(); ctx.closePath(); } }
+            }
+
+            if (gameState === "PLAYING" || gameState === "PAUSED" || gameState === "CHEST_ROULETTE") { drawOffScreenIndicators(); }
+            if (gameState === "PLAYING" || gameState === "PAUSED" || gameState === "CHEST_ROULETTE") {
+                floatingTexts.forEach(ft => { ctx.fillStyle = ft.color === "#ff3333" ? `rgba(255, 51, 51, ${ft.life/30})` : `rgba(255, 255, 255, ${ft.life/30})`; ctx.font = `bold ${ft.size}px sans-serif`; ctx.fillText(ft.text, ft.x - camera.x - 10, ft.y - camera.y - 15); });
+            }
+        }
+
+        function gameLoop(timestamp) { let dt = (timestamp - lastTime) / 1000; lastTime = timestamp; if (dt > 0.1) dt = 0.1; update(dt); draw(); requestAnimationFrame(gameLoop); }
+        initGame(); requestAnimationFrame((timestamp) => { lastTime = timestamp; gameLoop(timestamp); });
+
+        // ===================== 手機版：觸控控制 =====================
+        (function () {
+            const wrapper = document.getElementById("game-wrapper");
+            const touchLayer = document.getElementById("touch-layer");
+            const joyBase = document.getElementById("joy-base");
+            const joyKnob = document.getElementById("joy-knob");
+            const dashBtn = document.getElementById("dash-touch-btn");
+            const ultBtn = document.getElementById("ult-touch-btn");
+            const dashSub = document.getElementById("dash-touch-sub");
+            const ultSub = document.getElementById("ult-touch-sub");
+            const JOY_R = 55;
+
+            const flash = document.createElement("div"); flash.id = "ult-flash"; wrapper.appendChild(flash);
+            window.flashUlt = () => { flash.style.opacity = 1; setTimeout(() => flash.style.opacity = 0, 180); };
+
+            // 依螢幕比例調整畫布解析度（長邊固定 960，避免怪物在畫面內生成）
+            function fitCanvas() {
+                const w = wrapper.clientWidth, h = wrapper.clientHeight; if (!w || !h) return;
+                let cw, ch;
+                if (w >= h) { cw = 960; ch = Math.round(960 * h / w); } else { ch = 960; cw = Math.round(960 * w / h); }
+                if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+            }
+            fitCanvas();
+            window.addEventListener("resize", fitCanvas);
+            if (window.ResizeObserver) new ResizeObserver(fitCanvas).observe(wrapper);
+            setTimeout(fitCanvas, 100);
+            window.addEventListener("orientationchange", () => setTimeout(fitCanvas, 250));
+
+            // 虛擬搖桿（在畫面任意處按下即出現）
+            function setKnob(dx, dy) { joyKnob.style.transform = `translate(${dx}px, ${dy}px)`; }
+            function endJoy() { joy.active = false; joy.id = null; joy.x = 0; joy.y = 0; joyBase.style.display = "none"; setKnob(0, 0); }
+            touchLayer.addEventListener("pointerdown", (e) => {
+                if (gameState !== "PLAYING" || joy.id !== null) return;
+                e.preventDefault();
+                const r = wrapper.getBoundingClientRect();
+                joy.id = e.pointerId; joy.active = true; joy.ox = e.clientX; joy.oy = e.clientY; joy.x = 0; joy.y = 0;
+                joyBase.style.left = (e.clientX - r.left) + "px"; joyBase.style.top = (e.clientY - r.top) + "px"; joyBase.style.display = "block"; setKnob(0, 0);
+                try { touchLayer.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+            touchLayer.addEventListener("pointermove", (e) => {
+                if (e.pointerId !== joy.id) return;
+                e.preventDefault();
+                let dx = e.clientX - joy.ox, dy = e.clientY - joy.oy; const d = Math.hypot(dx, dy);
+                if (d > JOY_R) { dx = dx / d * JOY_R; dy = dy / d * JOY_R; }
+                setKnob(dx, dy);
+                const m = Math.min(1, d / JOY_R);
+                if (m < 0.15) { joy.x = 0; joy.y = 0; } else { joy.x = dx / JOY_R; joy.y = dy / JOY_R; }
+            });
+            ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => touchLayer.addEventListener(ev, (e) => { if (e.pointerId === joy.id) endJoy(); }));
+
+            // 動作按鈕
+            function bindBtn(btn, fn) { btn.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); fn(); }); btn.addEventListener("contextmenu", e => e.preventDefault()); }
+            bindBtn(dashBtn, () => triggerDash());
+            bindBtn(ultBtn, () => triggerUlt());
+            bindBtn(document.getElementById("pause-touch-btn"), () => { endJoy(); togglePause(); });
+
+            // 切到背景時自動暫停
+            document.addEventListener("visibilitychange", () => { if (document.hidden && gameState === "PLAYING") { endJoy(); togglePause(); } });
+            // 防止 iOS 雙擊縮放 / 長按選單
+            document.addEventListener("dblclick", e => e.preventDefault(), { passive: false });
+            document.addEventListener("gesturestart", e => e.preventDefault());
+            document.addEventListener("contextmenu", e => { if (e.target.closest("#game-wrapper")) e.preventDefault(); });
+
+            // 按鈕狀態同步
+            let lastPlaying = null;
+            function syncControls() {
+                const playing = gameState === "PLAYING";
+                if (playing !== lastPlaying) { document.body.classList.toggle("playing", playing); lastPlaying = playing; if (!playing) endJoy(); }
+                if (playing && typeof player !== "undefined" && player) {
+                    const dReady = player.dashCooldown <= 0;
+                    const dPct = dReady ? 100 : Math.max(0, 1 - player.dashCooldown / player.dashCooldownMax) * 100;
+                    dashBtn.style.setProperty("--fill", dPct + "%"); dashBtn.classList.toggle("ready", dReady);
+                    dashSub.textContent = dReady ? "就緒" : player.dashCooldown.toFixed(1) + "s";
+                    const uPct = Math.min(100, Math.floor(ultEnergy / MAX_ULT_ENERGY * 100));
+                    ultBtn.style.setProperty("--fill", uPct + "%"); ultBtn.classList.toggle("ready", uPct >= 100);
+                    ultSub.textContent = uPct >= 100 ? "就緒！" : uPct + "%";
+                }
+                requestAnimationFrame(syncControls);
+            }
+            requestAnimationFrame(syncControls);
+        })();
+
+    </script>
+</body>
+</html>
